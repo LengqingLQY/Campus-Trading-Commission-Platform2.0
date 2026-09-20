@@ -1,0 +1,526 @@
+/* ================================================================
+   profile.css - 个人空间专用样式
+   适用于 profile-admin.jsp 和 profile-user.jsp
+   风格与 product.css、secondhand.css 保持一致
+   ================================================================ */
+
+/* ===== 页面容器 ===== */
+.profile-page-workspace {
+    height: 100vh;
+    max-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 58px;
+    overscroll-behavior: contain;
+    scrollbar-color: rgba(24, 169, 155, 0.48) transparent;
+    scrollbar-width: thin;
+}
+
+.profile-page-workspace::-webkit-scrollbar {
+    width: 8px;
+}
+.profile-page-workspace::-webkit-scrollbar-track {
+    background: transparent;
+}
+.profile-page-workspace::-webkit-scrollbar-thumb {
+    background: rgba(24, 169, 155, 0.42);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background-clip: padding-box;
+}
+.profile-page-workspace::-webkit-scrollbar-thumb:hover {
+    background: rgba(24, 169, 155, 0.68);
+    background-clip: padding-box;
+}
+
+.profile-topbar {
+    margin-bottom: 28px;
+}
+
+/* ===== 个人资料卡片 ===== */
+.profile-card {
+    padding: 31px 34px 30px;
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.97);
+    border-radius: 22px;
+    box-shadow: 0 16px 38px rgba(47, 114, 112, 0.07);
+    margin-bottom: 22px;
+}
+
+.profile-card .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #eff5f3;
+}
+
+.profile-card .section-heading__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    background: var(--coral);
+    border-radius: 11px 8px 11px 8px;
+    transform: rotate(-5deg);
+}
+
+.profile-card .section-heading h2 {
+    margin: 0;
+    color: #37565d;
+    font-size: 20px;
+}
+.profile-card .section-heading p {
+    margin: 5px 0 0;
+    color: #a1b0b0;
+    font-size: 11px;
+}
+
+/* ===== 头像行 ===== */
+.profile-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eff5f3;
+    margin-bottom: 22px;
+}
+
+.profile-avatar-lg {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+    flex-shrink: 0;
+    border: 3px solid rgba(255, 255, 255, 0.74);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+.profile-avatar-lg.user {
+    background: linear-gradient(145deg, #ffe7a3, #fff4d4);
+    color: #39716d;
+}
+.profile-avatar-lg.admin {
+    background: #ffccc7;
+    color: #ff4d4f;
+}
+
+.profile-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #37565d;
+}
+
+.profile-role {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 400;
+    padding: 2px 12px;
+    border-radius: 20px;
+    margin-left: 8px;
+}
+.profile-role.user {
+    background: #f6ffed;
+    color: #52c41a;
+}
+.profile-role.admin {
+    background: #fff1f0;
+    color: #ff4d4f;
+}
+
+.profile-contact {
+    margin-top: 4px;
+    color: #9aabad;
+    font-size: 12px;
+}
+
+/* ===== 个人资料表单（复用发布页表单） ===== */
+.profile-card .publish-form {
+    margin-top: 0;
+}
+.profile-card .publish-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 16px;
+}
+.profile-card .form-field--full {
+    grid-column: 1 / -1;
+}
+.profile-card .publish-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: #637d80;
+    font-size: 11px;
+    font-weight: 800;
+}
+.profile-card .publish-form input {
+    width: 100%;
+    height: 45px;
+    padding: 0 13px;
+    color: #4d696e;
+    font-size: 12px;
+    background: #f7fcfa;
+    border: 1px solid #e8f2ef;
+    border-radius: 11px;
+    outline: 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.profile-card .publish-form input:focus {
+    background: #ffffff;
+    border-color: rgba(24, 169, 155, 0.35);
+    box-shadow: 0 0 0 3px rgba(24, 169, 155, 0.08);
+}
+.profile-card .publish-form input::placeholder {
+    color: #b3c0bf;
+}
+.profile-card .publish-actions {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eff5f3;
+}
+.profile-card .publish-actions .primary-action {
+    flex: 0 1 150px;
+}
+.profile-card .security-hint {
+    margin-top: 12px;
+    color: #adb7b6;
+    font-size: 10px;
+}
+
+/* ===== 记录列表 ===== */
+.profile-records {
+    padding: 31px 34px 30px;
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.97);
+    border-radius: 22px;
+    box-shadow: 0 16px 38px rgba(47, 114, 112, 0.07);
+}
+
+.profile-records .market-tools {
+    margin-top: 0;
+    padding: 0 0 16px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #eff5f3;
+    box-shadow: none;
+}
+
+.record-section-label {
+    display: block;
+    margin: 16px 0 8px;
+    color: #9aabad;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.record-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    background: #f7fcfa;
+    border: 1px solid #edf5f2;
+    border-radius: 11px;
+    margin-bottom: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.record-item:hover {
+    border-color: rgba(24, 169, 155, 0.25);
+}
+
+.record-item .record-info {
+    min-width: 0;
+    flex: 1;
+}
+.record-item .record-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #344f57;
+}
+.record-item .record-meta {
+    margin-top: 3px;
+    color: #94a5a7;
+    font-size: 10px;
+}
+.record-item .record-date {
+    flex: 0 0 auto;
+    color: #b3c0bf;
+    font-size: 10px;
+}
+
+/* ===== 状态标签（复用） ===== */
+.status-tag {
+    display: inline-block;
+    padding: 1px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #e6f7ff;
+    color: #1890ff;
+}
+.status-tag.pending {
+    background: #fff7e6;
+    color: #fa8c16;
+}
+.status-tag.done {
+    background: #f6ffed;
+    color: #52c41a;
+}
+
+/* ===== 管理员统计卡片 ===== */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+}
+.admin-stats .stat-item {
+    padding: 14px 12px;
+    text-align: center;
+    background: #f7fcfa;
+    border: 1px solid #edf5f2;
+    border-radius: 12px;
+}
+.admin-stats .stat-item strong {
+    display: block;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--teal-dark);
+    line-height: 1.2;
+}
+.admin-stats .stat-item span {
+    display: block;
+    margin-top: 4px;
+    color: #94a5a7;
+    font-size: 11px;
+}
+
+/* ===== 管理员项 ===== */
+.admin-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    background: #f7fcfa;
+    border: 1px solid #edf5f2;
+    border-radius: 11px;
+    margin-bottom: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.admin-item:hover {
+    border-color: rgba(24, 169, 155, 0.25);
+}
+
+.admin-item .admin-info {
+    min-width: 0;
+    flex: 1;
+}
+.admin-item .admin-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #344f57;
+}
+.admin-item .admin-meta {
+    margin-top: 3px;
+    color: #94a5a7;
+    font-size: 10px;
+}
+
+.admin-item .admin-actions {
+    display: flex;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+/* ===== 管理员按钮 ===== */
+.btn-sm {
+    padding: 5px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-sm:hover {
+    transform: translateY(-1px);
+    filter: saturate(1.08);
+}
+.btn-approve {
+    background: #52c41a;
+    color: #fff;
+}
+.btn-approve:hover {
+    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
+.btn-reject {
+    background: #ff4d4f;
+    color: #fff;
+}
+.btn-reject:hover {
+    box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+}
+.btn-edit {
+    background: #1890ff;
+    color: #fff;
+}
+.btn-edit:hover {
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+}
+.btn-reset {
+    background: #faad14;
+    color: #fff;
+}
+.btn-reset:hover {
+    box-shadow: 0 4px 12px rgba(250, 173, 20, 0.3);
+}
+
+/* ===== 管理员提示 ===== */
+.admin-hint {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #f7fcfa;
+    border: 1px dashed #d9d9d9;
+    border-radius: 10px;
+    color: #94a5a7;
+    font-size: 10px;
+    line-height: 1.7;
+}
+
+/* ===== 用户搜索 ===== */
+.user-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.user-search input {
+    flex: 1;
+    height: 42px;
+    padding: 0 14px;
+    color: #4d696e;
+    font-size: 12px;
+    background: #f7fcfa;
+    border: 1px solid #edf5f2;
+    border-radius: 11px;
+    outline: 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.user-search input:focus {
+    border-color: rgba(24, 169, 155, 0.35);
+    box-shadow: 0 0 0 3px rgba(24, 169, 155, 0.08);
+}
+.user-search .btn-search {
+    height: 42px;
+    padding: 0 22px;
+    background: linear-gradient(105deg, var(--teal-dark), var(--teal));
+    color: #fff;
+    border: none;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.user-search .btn-search:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(24, 169, 155, 0.2);
+}
+
+/* ===== 记录底部 ===== */
+.records-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 14px;
+    margin-top: 14px;
+    border-top: 1px solid #eff5f3;
+    color: #adb7b6;
+    font-size: 10px;
+}
+
+.records-tab-hint {
+    display: flex;
+    gap: 24px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #eff5f3;
+    color: #bcc8c7;
+    font-size: 10px;
+}
+.records-tab-hint span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 900px) {
+    .profile-page-workspace {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-card,
+    .profile-records {
+        padding: 25px 20px 23px;
+    }
+    .profile-card .publish-form-grid,
+    .admin-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+    .profile-avatar-row {
+        flex-direction: column;
+        text-align: center;
+    }
+    .record-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .admin-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .admin-item .admin-actions {
+        width: 100%;
+    }
+    .user-search {
+        flex-direction: column;
+    }
+    .records-tab-hint {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 520px) {
+    .profile-card .publish-form-grid,
+    .admin-stats {
+        grid-template-columns: 1fr;
+    }
+    .profile-card .publish-actions {
+        flex-direction: column;
+    }
+    .profile-card .publish-actions .primary-action {
+        flex-basis: 100%;
+        order: -1;
+    }
+}
