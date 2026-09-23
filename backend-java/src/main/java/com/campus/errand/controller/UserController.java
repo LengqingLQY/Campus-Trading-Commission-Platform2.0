@@ -1,5 +1,7 @@
 package com.campus.errand.controller;
 
+import com.campus.errand.dto.RegisterDTO;
+import com.campus.errand.dto.UserUpdateDTO;
 import com.campus.errand.pojo.Result;
 import com.campus.errand.pojo.User;
 import com.campus.errand.service.UserService;
@@ -11,15 +13,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 账号相关接口。骨架阶段只实现 POST /api/login，用于验证整条链路：
+ * 账号相关接口：注册、登录、退出、查看/修改当前用户资料（契约 §6）。
  *
- *   浏览器 --JSON--> Controller --> Service --> DAO --> JdbcTemplate --> app.db
- *          <--JSON--        <--        <--        <--
- *
- * 对比 Javatest 的 LoginController：那边继承 HttpServlet、重写 doPost、
- * 手动 request.getParameter()、手动 forward 到 jsp；
- * 这边 @PostMapping 直接映射，@RequestBody 自动把 JSON 转成 Map，
- * 返回的 Result 对象由 Jackson 自动转回 JSON。
+ * 业务失败由 Service 抛 BizException，本层不写失败分支。
  */
 @RestController
 @RequestMapping("/api")
@@ -29,21 +25,24 @@ public class UserController {
     private UserService userService;
 
     /**
-     * POST /api/login
-     * 入参：{"account":"admin", "password":"admin123"}
-     * 出参：{"code":0, "msg":"ok", "data":{"id":1,"account":"admin","username":"...","role":"admin"}}
+     * POST /api/register —— 注册，返回新用户 id。
+     */
+    @PostMapping("/register")
+    public Result register(@RequestBody RegisterDTO dto) {
+        int id = userService.register(dto);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", id);
+        return Result.ok(data);
+    }
+
+    /**
+     * POST /api/login —— 登录，写入 session，返回当前用户概要。
      */
     @PostMapping("/login")
     public Result login(@RequestBody Map<String, String> body, HttpSession session) {
-
         User user = userService.checkLogin(body.get("account"), body.get("password"));
 
-        if (user == null) {
-            return Result.fail(401, "账号或密码错误");
-        }
-
-        // 登录态存 session，后续接口靠它识别当前用户（对应 Javatest 里的
-        // session.setAttribute("user", user)，写法完全一样）
+        // 登录态存 session，后续接口靠它识别当前用户
         session.setAttribute("user", user);
 
         Map<String, Object> data = new LinkedHashMap<>();
@@ -55,14 +54,30 @@ public class UserController {
     }
 
     /**
-     * GET /api/users/me —— 验证 session 确实生效了（第二个验证点）
+     * POST /api/logout —— 退出，销毁 session。
+     */
+    @PostMapping("/logout")
+    public Result logout(HttpSession session) {
+        session.invalidate();
+        return Result.ok();
+    }
+
+    /**
+     * GET /api/users/me —— 查看当前用户资料（从库取最新，非 session 快照）。
      */
     @GetMapping("/users/me")
     public Result me(HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return Result.fail(401, "未登录");
-        }
-        return Result.ok(user);
+        User sessionUser = (User) session.getAttribute("user");
+        return Result.ok(userService.getMe(sessionUser.getId()));
+    }
+
+    /**
+     * PUT /api/users/me —— 修改当前用户资料 / 改密码。
+     */
+    @PutMapping("/users/me")
+    public Result updateMe(@RequestBody UserUpdateDTO dto, HttpSession session) {
+        User sessionUser = (User) session.getAttribute("user");
+        userService.updateMe(sessionUser.getId(), dto);
+        return Result.ok();
     }
 }

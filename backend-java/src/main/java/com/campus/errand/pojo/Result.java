@@ -1,5 +1,7 @@
 package com.campus.errand.pojo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * 统一响应体。所有接口一律返回这个结构，前端只写一个 request() 封装即可。
  *
@@ -12,6 +14,7 @@ public class Result {
 
     private int code;
     private String msg;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private Object data;
 
     public Result(int code, String msg, Object data) {

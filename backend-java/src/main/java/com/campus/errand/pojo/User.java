@@ -1,5 +1,7 @@
 package com.campus.errand.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * 对应 user 表，字段与《数据库设计说明书》§4.1 一一对应。
  *
@@ -10,6 +12,7 @@ public class User {
 
     private Integer id;
     private String account;
+    @JsonIgnore
     private String passwordHash;   // ← password_hash，绝不返回给前端
     private String username;
     private String qq;

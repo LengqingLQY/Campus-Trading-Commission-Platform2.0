@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后端接口测试台 · CTCP</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --line:#e5e7eb; --accent:#2563eb; --text:#111827; --muted:#6b7280; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+  .wrap { max-width:960px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 20px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  section h2 { font-size:14px; margin:0 0 12px; color:var(--accent); }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  button { border:1px solid var(--line); background:#fff; color:var(--text); padding:7px 12px; border-radius:8px; cursor:pointer; font-size:13px; }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  input { border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px; width:110px; }
+  pre { background:#0f172a; color:#e2e8f0; border-radius:10px; padding:16px; font-size:12.5px; overflow:auto; max-height:520px; margin:0; }
+  .tag { font-size:11px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>后端接口测试台</h1>
+  <p class="sub">CTCP 普通用户端 17 个接口 · 服务地址 http://localhost:8081（当前页面与接口同源，登录后 Cookie 自动携带）</p>
+
+  <section>
+    <h2>账号</h2>
+    <div class="row">
+      <button class="primary" onclick="login('alice','alice123')">登录 alice</button>
+      <button class="primary" onclick="login('bob','bob123')">登录 bob</button>
+      <button onclick="me()">我的资料</button>
+      <button onclick="updateMe()">改昵称</button>
+      <button onclick="register()">注册新用户</button>
+      <button onclick="logout()">退出</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>任务 <span class="tag">列表/详情公开，其余需登录</span></h2>
+    <div class="row">
+      <button onclick="api('GET','/api/public/tasks?sort=time_desc&size=10')">任务列表</button>
+      <input id="taskId" value="8" placeholder="任务ID">
+      <button onclick="api('GET','/api/public/tasks/'+v('taskId'))">任务详情</button>
+      <button onclick="createTask()">发布任务</button>
+      <button onclick="api('POST','/api/tasks/'+v('taskId')+'/accept')">接取任务</button>
+      <button onclick="api('PUT','/api/tasks/'+v('taskId')+'/deliver')">标记送达</button>
+      <button onclick="api('PUT','/api/tasks/'+v('taskId')+'/complete')">确认完成</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>商品 <span class="tag">列表/详情公开，其余需登录</span></h2>
+    <div class="row">
+      <button onclick="api('GET','/api/public/products?sort=time_desc&size=10')">商品列表</button>
+      <input id="productId" value="5" placeholder="商品ID">
+      <button onclick="api('GET','/api/public/products/'+v('productId'))">商品详情</button>
+      <button onclick="createProduct()">发布商品</button>
+      <button onclick="api('POST','/api/products/'+v('productId')+'/buy')">购买商品</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>个人空间</h2>
+    <div class="row">
+      <button onclick="api('GET','/api/me/tasks?type=published&size=20')">我发布的任务</button>
+      <button onclick="api('GET','/api/me/tasks?type=accepted&size=20')">我接取的任务</button>
+      <button onclick="api('GET','/api/me/products?type=published&size=20')">我发布的商品</button>
+      <button onclick="api('GET','/api/me/products?type=bought&size=20')">我购买的商品</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>响应</h2>
+    <pre id="result">点击上方按钮发起请求，结果会显示在这里…</pre>
+  </section>
+</div>
+
+<script>
+  function v(id) { return document.getElementById(id).value.trim(); }
+
+  async function api(method, url, body) {
+    const opt = { method: method, headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opt.body = JSON.stringify(body);
+    try {
+      const res = await fetch(url, opt);
+      const json = await res.json();
+      document.getElementById('result').textContent =
+        method + ' ' + url + '\nHTTP ' + res.status + '\n\n' + JSON.stringify(json, null, 2);
+    } catch (e) {
+      document.getElementById('result').textContent = method + ' ' + url + '\n请求失败：' + e.message;
+    }
+  }
+
+  function login(account, password) { api('POST', '/api/login', { account: account, password: password }); }
+  function logout() { api('POST', '/api/logout'); }
+  function me() { api('GET', '/api/users/me'); }
+  function updateMe() { api('PUT', '/api/users/me', { username: '测试昵称' }); }
+
+  function register() {
+    const n = Date.now() % 100000;
+    api('POST', '/api/register', { account: 'user' + n, password: '123456', username: '测试用户' + n });
+  }
+
+  function createTask() {
+    const n = Date.now() % 1000;
+    api('POST', '/api/tasks', { title: '测试任务' + n, description: '由测试台创建', pickup: 'A点', delivery: 'B点', amount: 5 });
+  }
+
+  function createProduct() {
+    const n = Date.now() % 1000;
+    api('POST', '/api/products', { title: '测试商品' + n, description: '由测试台创建', category: 'book', condition: 'good', price: 9.9, location: '图书馆' });
+  }
+</script>
+</body>
+</html>
