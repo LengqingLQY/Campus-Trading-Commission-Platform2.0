@@ -11,9 +11,11 @@ public class ProductOrder {
     private Integer sellerId;
     private Integer buyerId;
     private Double price;           // 成交价快照，卖家改价不影响历史记录
-    private String status;          // created / completed / cancelled
+    private String status;          // created / delivered / completed / cancelled
     private String createdAt;
-    private String finishedAt;
+    private String deliveredAt;     // 卖家点「确认已交付」的时间
+    private String finishedAt;      // 买家点「确认收货」的时间
+    private String cancelledAt;     // 双方同意终止的时间
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -36,6 +38,12 @@ public class ProductOrder {
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
+    public String getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(String deliveredAt) { this.deliveredAt = deliveredAt; }
+
     public String getFinishedAt() { return finishedAt; }
     public void setFinishedAt(String finishedAt) { this.finishedAt = finishedAt; }
+
+    public String getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(String cancelledAt) { this.cancelledAt = cancelledAt; }
 }

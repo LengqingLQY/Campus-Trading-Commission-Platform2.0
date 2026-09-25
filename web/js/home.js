@@ -19,7 +19,7 @@
         const category = categoryNames[item.category] || "二手好物";
         const emoji = categoryEmoji[item.category] || "✨";
         return `
-            <a class="discovery-card discovery-card--product tone-${index % 4}" href="${api.pageUrl(`product-detail.jsp?productId=${item.id}`)}">
+            <a class="discovery-card discovery-card--product tone-${index % 4}" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${item.id}`)}">
                 <div class="discovery-card__visual">
                     <span class="discovery-card__kind">二手交易</span>
                     <span class="discovery-card__emoji" aria-hidden="true">${emoji}</span>

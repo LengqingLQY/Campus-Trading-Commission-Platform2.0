@@ -21,6 +21,7 @@ public class Task {
     private String deadline;
     private Double amount;
     private String contact;
+    private String imageUrls;       // 逗号分隔的图片 URL（增量契约：图片功能 §2）
     private String auditStatus;
     private String auditRemark;
     private String status;          // open / accepted / delivered / completed
@@ -39,6 +40,7 @@ public class Task {
     private String acceptTime;
     private String deliveredAt;
     private String finishedAt;
+    private TaskTerminationRequest terminationRequest;  // 进行中任务的待处理终止申请，无则 null
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -66,6 +68,9 @@ public class Task {
 
     public String getContact() { return contact; }
     public void setContact(String contact) { this.contact = contact; }
+
+    public String getImageUrls() { return imageUrls; }
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
 
     public String getAuditStatus() { return auditStatus; }
     public void setAuditStatus(String auditStatus) { this.auditStatus = auditStatus; }
@@ -114,4 +119,7 @@ public class Task {
 
     public String getFinishedAt() { return finishedAt; }
     public void setFinishedAt(String finishedAt) { this.finishedAt = finishedAt; }
+
+    public TaskTerminationRequest getTerminationRequest() { return terminationRequest; }
+    public void setTerminationRequest(TaskTerminationRequest terminationRequest) { this.terminationRequest = terminationRequest; }
 }

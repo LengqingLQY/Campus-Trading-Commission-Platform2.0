@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/product.css">
+    <link rel="stylesheet" href="css/image-upload.css">
     <link rel="stylesheet" href="css/functional.css">
     <title>CTCP · 商品详情</title>
 </head>
@@ -18,7 +19,7 @@
         <header class="workspace__topbar product-page-topbar">
             <div><span class="workspace__kicker">SECOND-HAND · PRODUCT DETAIL</span><h1>商品详情</h1></div>
             <div class="workspace__actions">
-                <a class="back-link" href="secondhand.jsp">← 返回商品列表</a>
+                <a class="back-link" href="secondhand.jsp" data-detail-back>← 返回商品列表</a>
                 <a class="profile-chip market-publish-button" href="product-publish.jsp"><span>＋</span><span>发布商品</span></a>
             </div>
         </header>

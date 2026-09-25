@@ -577,6 +577,206 @@ button:disabled {
     text-align: center;
 }
 
+.termination-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #edf4f2;
+}
+
+.termination-entry .secondary-action {
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.termination-entry p {
+    margin: 0;
+    color: #9aabad;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+.termination-composer {
+    margin-top: 14px;
+    padding: 16px;
+    background: #fff9f7;
+    border: 1px solid #f6ddd8;
+    border-radius: 14px;
+}
+
+.termination-composer__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.termination-composer__heading strong,
+.termination-composer__heading small {
+    display: block;
+}
+
+.termination-composer__heading strong {
+    color: #7f504c;
+    font-size: 12px;
+}
+
+.termination-composer__heading small {
+    margin-top: 5px;
+    color: #a78784;
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.termination-composer__heading > button {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    color: #ad7771;
+    font-size: 17px;
+    background: #ffffff;
+    border: 1px solid #f1d6d1;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.termination-composer label {
+    display: block;
+    margin-bottom: 7px;
+    color: #795f5c;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.termination-composer label span {
+    color: #b49a97;
+    font-weight: 500;
+}
+
+.termination-composer textarea {
+    width: 100%;
+    min-height: 82px;
+    padding: 10px 11px;
+    color: #5d6f70;
+    font-size: 10px;
+    line-height: 1.65;
+    resize: vertical;
+    background: #ffffff;
+    border: 1px solid #eedbd7;
+    border-radius: 10px;
+    outline: 0;
+}
+
+.termination-composer textarea:focus {
+    border-color: #e9aaa2;
+    box-shadow: 0 0 0 3px rgba(221, 116, 105, 0.08);
+}
+
+.termination-composer .form-feedback {
+    min-height: 16px;
+    margin: 6px 0 0;
+}
+
+.termination-composer__actions,
+.termination-request-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 10px;
+}
+
+.termination-composer__actions .primary-action,
+.termination-request-actions .primary-action {
+    flex: 0 1 220px;
+}
+
+.termination-request-banner {
+    padding: 16px;
+    color: #786a52;
+    background: #fff9e8;
+    border: 1px solid #f8e6ad;
+    border-radius: 14px;
+}
+
+.termination-request-banner--review {
+    color: #7b5651;
+    background: #fff4f1;
+    border-color: #f4d3cd;
+}
+
+.termination-request-banner__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+}
+
+.termination-request-banner__head > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    flex: 0 0 auto;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    background: #ddb04b;
+    border-radius: 10px;
+}
+
+.termination-request-banner--review .termination-request-banner__head > span {
+    background: #df796f;
+}
+
+.termination-request-banner__head strong,
+.termination-request-banner__head small {
+    display: block;
+}
+
+.termination-request-banner__head strong {
+    font-size: 12px;
+}
+
+.termination-request-banner__head small {
+    margin-top: 5px;
+    font-size: 9px;
+    line-height: 1.65;
+    opacity: 0.78;
+}
+
+.termination-request-reason {
+    margin: 13px 0 0;
+    padding: 11px 12px;
+    color: #746864;
+    font-size: 10px;
+    line-height: 1.65;
+    background: rgba(255, 255, 255, 0.68);
+    border-radius: 10px;
+}
+
+.termination-request-reason span {
+    display: block;
+    margin-bottom: 4px;
+    color: #ad918d;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+}
+
+.termination-request-meta {
+    margin-top: 8px;
+    color: #aa9a85;
+    font-size: 8px;
+}
+
+.termination-approve {
+    background: linear-gradient(105deg, #c86158, #e78679);
+    box-shadow: 0 10px 18px rgba(200, 97, 88, 0.18);
+}
+
 .order-waiting-banner,
 .order-complete-banner {
     display: flex;
@@ -595,6 +795,12 @@ button:disabled {
     border-color: #d1eee8;
 }
 
+.order-complete-banner--terminated {
+    color: #5d716f;
+    background: #f1f7f5;
+    border-color: #dcebe7;
+}
+
 .order-waiting-banner > span,
 .order-complete-banner > span {
     display: inline-flex;
@@ -610,6 +816,7 @@ button:disabled {
 }
 
 .order-complete-banner > span { background: var(--teal); }
+.order-complete-banner--terminated > span { background: #7aa29c; }
 .order-waiting-banner strong,
 .order-complete-banner strong,
 .order-waiting-banner small,
@@ -655,6 +862,11 @@ button:disabled {
     .order-hero { display: block; padding: 22px; }
     .order-price { margin-top: 18px; text-align: left; }
     .order-card { padding: 21px; }
+    .termination-entry,
+    .termination-composer__actions,
+    .termination-request-actions { align-items: stretch; flex-direction: column; }
+    .termination-composer__actions .primary-action,
+    .termination-request-actions .primary-action { flex-basis: auto; }
     .auth-contact-grid { grid-template-columns: 1fr; }
     .auth-contact-grid__full { grid-column: auto; }
 }

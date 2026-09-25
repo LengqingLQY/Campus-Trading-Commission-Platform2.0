@@ -40,7 +40,7 @@
             }
             api.setLoading(button, true, "正在登录...");
             try {
-                await api.request("/login", {
+                const data = await api.request("/login", {
                     method: "POST",
                     body: {account: account.value.trim(), password: password.value}
                 });
@@ -50,7 +50,8 @@
                     localStorage.removeItem("ctcp-remembered-account");
                 }
                 api.resetCurrentUser();
-                location.href = api.pageUrl(safeNext());
+                const target = data && data.role === "admin" ? "profile-admin.jsp" : safeNext();
+                location.href = api.pageUrl(target);
             } catch (error) {
                 api.setFeedback(feedback, error.message || "登录失败，请稍后重试");
             } finally {

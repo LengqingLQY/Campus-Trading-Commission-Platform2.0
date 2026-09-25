@@ -58,6 +58,15 @@ public class ProductController {
         return Result.ok(Map.of("orderId", orderId));
     }
 
+    /**
+     * DELETE /api/products/{id} —— 发布者软删除自己的商品。
+     */
+    @DeleteMapping("/products/{id}")
+    public Result delete(@PathVariable int id, HttpSession session) {
+        productService.deleteProduct(id, currentUser(session).getId());
+        return Result.ok(Map.of("id", id));
+    }
+
     private User currentUser(HttpSession session) {
         User user = (User) session.getAttribute("user");
         if (user == null) {

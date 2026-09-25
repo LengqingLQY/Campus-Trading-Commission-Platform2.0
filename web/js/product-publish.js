@@ -9,6 +9,32 @@
     const button = form.querySelector("button[type='submit']");
     const feedback = form.querySelector("[data-feedback]");
 
+    // ===== 图片上传管理器 =====
+    const imageManager = new ImageUploadManager({
+        container: "[data-product-upload-zone]",
+        grid: "[data-product-images]",
+        input: "#productImageInput",
+        countEl: "[data-image-count]",
+        placeholderEl: "[data-upload-placeholder]",
+        max: 3,
+        name: "imageUrls",
+        form: "[data-product-publish]",
+        onUpload: (file) => {
+            const fd = new FormData();
+            fd.append("file", file);
+            return fetch("http://localhost:8081/api/upload/image", {
+                method: "POST",
+                body: fd,
+                credentials: "include"
+            })
+            .then((response) => response.json())
+            .then((result) => {
+                if (result.code === 0) return { url: result.data.url };
+                throw new Error(result.msg || "上传失败");
+            });
+        }
+    });
+
     function updatePreview() {
         const data = new FormData(form);
         const title = String(data.get("title") || "").trim() || "你的商品标题";
@@ -52,11 +78,12 @@
                     condition: String(data.get("condition") || "good"),
                     price,
                     location: String(data.get("location") || "").trim(),
-                    contact: String(data.get("contact") || "").trim()
+                    contact: String(data.get("contact") || "").trim(),
+                    imageUrls: imageManager.getImageUrls()
                 }
             });
-            api.toast("商品已发布", "success");
-            location.href = api.pageUrl(`product-detail.jsp?productId=${result.id}`);
+            api.toast("发布成功，等待管理员审核", "success");
+            location.href = api.pageUrl("profile-user.jsp?recordTab=published-products");
         } catch (error) {
             if (error.status !== 401) api.setFeedback(feedback, error.message || "发布失败，请稍后重试");
         } finally {

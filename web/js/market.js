@@ -13,14 +13,29 @@
     const emoji = {book: "📚", electronic: "🎧", daily: "🪴", clothing: "🧥", sports: "🏀", other: "✨"};
     const state = {keyword: "", sort: "time_desc", category: "", requestId: 0};
 
+    function getFirstImage(item) {
+        if (item.imageUrls) {
+            const urls = item.imageUrls.split(",");
+            return urls[0] || null;
+        }
+        return null;
+    }
+
     function card(item, index) {
         const sold = item.status !== "on_sale";
+        const firstImage = getFirstImage(item);
+        const visualContent = firstImage
+            ? `<img src="${api.escapeHtml(firstImage)}" alt="商品图片" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">`
+            : `<span class="product-emoji" aria-hidden="true">${emoji[item.category] || "✨"}</span>`;
+        const visualClass = firstImage
+            ? "product-visual product-visual--has-image"
+            : `product-visual product-visual--${["mint", "sky", "peach", "lemon"][index % 4]}`;
         return `
             <article class="product-card${sold ? " product-card--sold" : ""}">
-                <a class="product-card__link" href="${api.pageUrl(`product-detail.jsp?productId=${item.id}`)}">
-                    <div class="product-visual product-visual--${["mint", "sky", "peach", "lemon"][index % 4]}">
+                <a class="product-card__link" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${item.id}`)}">
+                    <div class="${visualClass}">
                         <span class="visual-label">${api.escapeHtml(categoryNames[item.category] || "二手好物")}</span>
-                        <span class="product-emoji" aria-hidden="true">${emoji[item.category] || "✨"}</span>
+                        ${visualContent}
                         ${sold ? `<span class="sale-badge">${item.status === "completed" ? "交易完成" : "已售出"}</span>` : ""}
                     </div>
                     <div class="product-info">

@@ -11,6 +11,7 @@ public class UserUpdateDTO {
     private String qq;
     private String wechat;
     private String phone;
+    private String avatarUrl;   // 头像 URL，空字符串表示恢复默认（增量契约：图片功能 §8）
     private String oldPassword;
     private String newPassword;
 
@@ -25,6 +26,9 @@ public class UserUpdateDTO {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
     public String getOldPassword() { return oldPassword; }
     public void setOldPassword(String oldPassword) { this.oldPassword = oldPassword; }

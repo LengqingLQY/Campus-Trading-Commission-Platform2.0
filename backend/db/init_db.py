@@ -11,8 +11,8 @@
 注意：脚本会删除并重建所有表，已有数据会丢失。可反复执行。
 
 关于密码哈希：
-    优先使用 werkzeug.security.generate_password_hash；若环境还没装 Flask，
-    则用标准库 hashlib 生成 **格式完全一致** 的哈希
+    优先使用 werkzeug.security.generate_password_hash，并显式指定 PBKDF2；
+    若环境还没装 Flask，则用标准库 hashlib 生成 **格式完全一致** 的哈希
     （pbkdf2:sha256:600000$盐$哈希）。装上 Flask 之后，
     werkzeug.security.check_password_hash 可以直接校验本脚本生成的密码。
 """
@@ -39,7 +39,7 @@ SCHEMA_PATH = os.path.join(BASE_DIR, "schema.sql")
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "app.db")
 
 # 建表顺序的倒序，先删子表再删父表
-DROP_ORDER = ["product_order", "task_order", "product", "task", "user"]
+DROP_ORDER = ["product_order_termination_request", "task_termination_request", "product_order", "task_order", "product", "task", "user"]
 VIEWS = ["v_public_task", "v_public_product"]
 
 
@@ -60,9 +60,17 @@ def _fallback_generate_password_hash(password, salt_length=16):
 
 
 try:
-    from werkzeug.security import generate_password_hash
+    from werkzeug.security import generate_password_hash as _werkzeug_generate_password_hash
 
-    HASH_SOURCE = "werkzeug"
+    def generate_password_hash(password, salt_length=16):
+        """显式固定 PBKDF2，避免新版 Werkzeug 默认改用 Java 端不支持的 scrypt。"""
+        return _werkzeug_generate_password_hash(
+            password,
+            method="pbkdf2:sha256:%d" % PBKDF2_ITERATIONS,
+            salt_length=salt_length,
+        )
+
+    HASH_SOURCE = "werkzeug(pbkdf2:sha256:%d)" % PBKDF2_ITERATIONS
 except ImportError:
     generate_password_hash = _fallback_generate_password_hash
     HASH_SOURCE = "hashlib(与 werkzeug 格式兼容)"
@@ -228,12 +236,12 @@ def insert_demo(conn):
         ],
     )
 
-    # 商品2（罗技鼠标）被 alice 买走
+    # 商品2（罗技鼠标）被 alice 买走，状态 created（待卖家交付）
     conn.execute(
         """INSERT INTO product_order
-             (product_id, seller_id, buyer_id, price, status, created_at, finished_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (2, BOB_ID, ALICE_ID, 45.0, "created", _ts(days=3, hours=8), None),
+             (product_id, seller_id, buyer_id, price, status, created_at, delivered_at, finished_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (2, BOB_ID, ALICE_ID, 45.0, "created", _ts(days=3, hours=8), None, None),
     )
     conn.commit()
 

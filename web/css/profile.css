@@ -154,6 +154,28 @@
 .profile-card .form-field--full {
     grid-column: 1 / -1;
 }
+.profile-password-fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.profile-password-fieldset legend {
+    margin-bottom: 8px;
+    color: #637d80;
+    font-size: 11px;
+    font-weight: 800;
+}
+.profile-password-fieldset legend span {
+    color: #a8b5b5;
+    font-size: 10px;
+    font-weight: 500;
+}
+.profile-password-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
 .profile-card .publish-form label {
     display: block;
     margin-bottom: 8px;
@@ -513,6 +535,7 @@
 
 @media (max-width: 520px) {
     .profile-card .publish-form-grid,
+    .profile-password-grid,
     .admin-stats {
         grid-template-columns: 1fr;
     }
@@ -523,4 +546,71 @@
         flex-basis: 100%;
         order: -1;
     }
+}
+
+/* ===== 头像上传遮罩样式 ===== */
+.profile-avatar-lg {
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.profile-avatar-lg .avatar-letter {
+    position: relative;
+    z-index: 1;
+}
+
+.avatar-upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.profile-avatar-lg:hover .avatar-upload-overlay {
+    opacity: 1;
+}
+
+.avatar-upload-overlay .upload-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.avatar-upload-overlay .upload-text {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* ===== 头像遮罩分隔符 ===== */
+.avatar-upload-overlay .upload-divider {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    margin: 0 4px;
+}
+
+.avatar-upload-overlay .upload-text {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.avatar-upload-overlay .upload-text:hover {
+    background: rgba(255, 255, 255, 0.2);
 }

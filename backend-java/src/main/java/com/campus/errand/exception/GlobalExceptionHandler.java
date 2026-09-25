@@ -6,8 +6,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * 统一异常处理：Controller 内不写 try-catch，所有异常在这里转成统一响应结构，
@@ -47,6 +50,35 @@ public class GlobalExceptionHandler {
         log.warn("数据库约束拦截: {}", e.getMessage());
         return ResponseEntity.status(409)
                 .body(Result.fail(409, "数据不符合要求"));
+    }
+
+    /**
+     * 请求体无法解析：JSON 语法错误、编码不是 UTF-8、字段类型不符等。
+     * 属于客户端参数问题，返回 400，而不是漏到兜底 500。
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Result> handleNotReadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(400)
+                .body(Result.fail(400, "请求体格式不正确"));
+    }
+
+    /**
+     * 路径 / 查询参数类型不符：例如 /api/tasks/abc 中的 abc 不是整数。
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Result> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.status(400)
+                .body(Result.fail(400, "请求参数格式不正确"));
+    }
+
+    /**
+     * 上传文件超过大小上限（增量契约：图片功能 §3.1，5MB）。
+     * 由 multipart 配置触发，返回 400 而非漏到兜底 500。
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Result> handleMaxUpload(MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(400)
+                .body(Result.fail(400, "图片超过大小限制"));
     }
 
     /**

@@ -30,7 +30,7 @@ public class TaskDAO {
      */
     public List<Task> findPublic(String keyword, String orderBy, int offset, int size) {
         String p = likePattern(keyword);
-        String sql = "SELECT t.id, t.title, t.description, t.pickup, t.delivery, t.deadline, t.amount, "
+        String sql = "SELECT t.id, t.title, t.description, t.pickup, t.delivery, t.deadline, t.amount, t.image_urls, "
                 + "t.status, t.publisher_id, t.created_at, u.username AS publisherName "
                 + "FROM v_public_task t JOIN user u ON u.id = t.publisher_id "
                 + "WHERE t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\' "
@@ -54,7 +54,7 @@ public class TaskDAO {
      * 查不到（不存在 / 未审核 / 已删除）返回 null。
      */
     public Task findPublicDetail(int id) {
-        String sql = "SELECT t.id, t.title, t.description, t.pickup, t.delivery, t.deadline, t.amount, "
+        String sql = "SELECT t.id, t.title, t.description, t.pickup, t.delivery, t.deadline, t.amount, t.image_urls, "
                 + "t.contact, t.audit_status, t.audit_remark, t.status, t.publisher_id, t.created_at, t.updated_at, "
                 + "u.username AS publisherName "
                 + "FROM v_public_task t JOIN user u ON u.id = t.publisher_id WHERE t.id = ?";
@@ -72,15 +72,15 @@ public class TaskDAO {
     }
 
     /**
-     * 发布任务：audit_status 固定 approved、status 固定 open。
+     * 发布任务：audit_status 固定 pending（待管理员审核）、status 固定 open。
      * 返回自增主键 id。
      */
     public int insert(Task task) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO task (publisher_id, title, description, pickup, delivery, deadline, amount, contact, audit_status, status) "
-                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', 'open')",
+                    "INSERT INTO task (publisher_id, title, description, pickup, delivery, deadline, amount, contact, image_urls, audit_status, status) "
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'open')",
                     Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, task.getPublisherId());
             ps.setString(2, task.getTitle());
@@ -90,6 +90,7 @@ public class TaskDAO {
             ps.setString(6, task.getDeadline());
             ps.setDouble(7, task.getAmount());
             ps.setString(8, task.getContact());
+            ps.setString(9, task.getImageUrls());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -126,12 +127,38 @@ public class TaskDAO {
                 taskId);
     }
 
-    /** 个人空间：我发布的任务（含审核字段；有接单记录时附接单人信息）。 */
+    /**
+     * 终止申请同意后，任务 accepted/delivered -> open（增量契约：跑腿任务删除与双向终止 §5.7）。
+     */
+    public int markOpen(int taskId) {
+        return jdbc.update(
+                "UPDATE task SET status='open', updated_at=datetime('now','localtime') "
+              + "WHERE id=? AND status IN ('accepted','delivered')",
+                taskId);
+    }
+
+    /**
+     * 发布者软删除：仅在本人、未删除、且状态为 open/completed 时置 is_deleted=1。
+     * 返回受影响行数（0 = 非本人 / 已删除 / 进行中，由 Service 二次判断返回精确错误码）。
+     */
+    public int softDelete(int taskId, int publisherId) {
+        return jdbc.update(
+                "UPDATE task SET is_deleted=1, deleted_by=?, "
+              + "deleted_at=datetime('now','localtime'), updated_at=datetime('now','localtime') "
+              + "WHERE id=? AND publisher_id=? AND is_deleted=0 AND status IN ('open','completed')",
+                publisherId, taskId, publisherId);
+    }
+
+    /** 个人空间：我发布的任务（含审核字段；有接单记录时附接单人信息）。
+     *  子查询优先取「非 cancelled」的活动订单，终止后重新被接取时展示最新接单人。 */
     public List<Task> findPublishedByUser(int publisherId, int offset, int size) {
         String sql = "SELECT t.*, o.id AS orderId, o.accepter_id AS accepterId, "
                 + "u2.username AS accepterName, o.status AS orderStatus "
                 + "FROM task t "
-                + "LEFT JOIN task_order o ON o.task_id = t.id "
+                + "LEFT JOIN task_order o ON o.id = ("
+                + "    SELECT o2.id FROM task_order o2 WHERE o2.task_id = t.id "
+                + "    ORDER BY (o2.status <> 'cancelled') DESC, o2.created_at DESC, o2.id DESC LIMIT 1"
+                + ") "
                 + "LEFT JOIN user u2 ON u2.id = o.accepter_id "
                 + "WHERE t.publisher_id = ? AND t.is_deleted = 0 "
                 + "ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
@@ -145,21 +172,66 @@ public class TaskDAO {
         return count == null ? 0 : count;
     }
 
-    /** 个人空间：我接取的任务（附订单状态与各时间点）。 */
+    /** 个人空间：我接取的任务（附订单状态与各时间点）。终止后订单 cancelled，不再计入。 */
     public List<Task> findAcceptedByUser(int accepterId, int offset, int size) {
         String sql = "SELECT t.*, o.id AS orderId, o.status AS orderStatus, o.created_at AS acceptTime, "
                 + "o.delivered_at AS deliveredAt, o.finished_at AS finishedAt "
                 + "FROM task_order o JOIN task t ON t.id = o.task_id "
-                + "WHERE o.accepter_id = ? "
+                + "WHERE o.accepter_id = ? AND o.status <> 'cancelled' "
                 + "ORDER BY o.created_at DESC LIMIT ? OFFSET ?";
         return jdbc.query(sql, new BeanPropertyRowMapper<>(Task.class), accepterId, size, offset);
     }
 
     public long countAcceptedByUser(int accepterId) {
         Long count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM task_order WHERE accepter_id = ?",
+                "SELECT COUNT(*) FROM task_order WHERE accepter_id = ? AND status <> 'cancelled'",
                 Long.class, accepterId);
         return count == null ? 0 : count;
+    }
+
+    // ============================ 管理员 ============================
+
+    /**
+     * 管理员任务列表：查原始 task 表（不过滤审核状态，但排除已软删除），
+     * 可按 auditStatus 与关键词过滤。auditStatus 传 null 表示不过滤。
+     */
+    public List<Task> findAdminList(String auditStatus, String keyword, int offset, int size) {
+        String p = likePattern(keyword);
+        String sql = "SELECT t.*, u.username AS publisherName "
+                + "FROM task t JOIN user u ON u.id = t.publisher_id "
+                + "WHERE t.is_deleted = 0 "
+                + "AND (? IS NULL OR t.audit_status = ?) "
+                + "AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\') "
+                + "ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
+        return jdbc.query(sql, new BeanPropertyRowMapper<>(Task.class),
+                auditStatus, auditStatus, p, p, size, offset);
+    }
+
+    public long countAdminList(String auditStatus, String keyword) {
+        String p = likePattern(keyword);
+        String sql = "SELECT COUNT(*) FROM task t "
+                + "WHERE t.is_deleted = 0 "
+                + "AND (? IS NULL OR t.audit_status = ?) "
+                + "AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')";
+        Long count = jdbc.queryForObject(sql, Long.class, auditStatus, auditStatus, p, p);
+        return count == null ? 0 : count;
+    }
+
+    /** 管理员审核：只改 audit_status 与 audit_remark，不动业务 status。返回受影响行数。 */
+    public int audit(int id, String auditStatus, String remark) {
+        return jdbc.update(
+                "UPDATE task SET audit_status=?, audit_remark=?, updated_at=datetime('now','localtime') "
+              + "WHERE id=? AND is_deleted=0",
+                auditStatus, remark, id);
+    }
+
+    /** 管理员软删除：不限发布者，直接置 is_deleted=1。返回受影响行数。 */
+    public int softDeleteByAdmin(int id, int adminId) {
+        return jdbc.update(
+                "UPDATE task SET is_deleted=1, deleted_by=?, "
+              + "deleted_at=datetime('now','localtime'), updated_at=datetime('now','localtime') "
+              + "WHERE id=? AND is_deleted=0",
+                adminId, id);
     }
 
     private static String likePattern(String keyword) {

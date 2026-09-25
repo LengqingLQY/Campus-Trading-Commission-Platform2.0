@@ -18,6 +18,7 @@ public class User {
     private String qq;
     private String wechat;
     private String phone;
+    private String avatarUrl;      // 头像 URL（增量契约：图片功能 §2）
     private String role;           // user / admin
     private String status;         // active / banned
     private String createdAt;      // 'YYYY-MM-DD HH:MM:SS'
@@ -43,6 +44,9 @@ public class User {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }

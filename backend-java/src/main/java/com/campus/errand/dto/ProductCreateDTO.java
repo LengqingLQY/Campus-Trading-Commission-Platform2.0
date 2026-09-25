@@ -13,6 +13,7 @@ public class ProductCreateDTO {
     private Double price;           // 非负，缺省 0
     private String location;
     private String contact;
+    private String imageUrls;       // 逗号分隔的图片 URL（增量契约：图片功能 §2），选填
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -34,4 +35,7 @@ public class ProductCreateDTO {
 
     public String getContact() { return contact; }
     public void setContact(String contact) { this.contact = contact; }
+
+    public String getImageUrls() { return imageUrls; }
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
 }

@@ -501,6 +501,12 @@
     background: linear-gradient(140deg, #fff0b9, #fff8dc);
 }
 
+/* 带真实缩略图时隐藏装饰圆，避免压在照片上 */
+.product-visual--has-image::before,
+.product-visual--has-image::after {
+    display: none;
+}
+
 .visual-label {
     position: absolute;
     top: 12px;

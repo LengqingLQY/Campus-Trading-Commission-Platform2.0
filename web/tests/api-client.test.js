@@ -59,6 +59,24 @@ async function main() {
     assert.equal(captured.options.headers["Content-Type"], "application/json; charset=UTF-8");
     assert.deepEqual(JSON.parse(captured.options.body), {account: "alice", password: "alice123"});
     assert.equal(context.CTCP.pageUrl("secondhand.jsp"), "http://localhost:8080/CTCP/secondhand.jsp");
+    assert.equal(context.CTCP.currentPagePath(), "index.jsp");
+    const detailUrl = new URL(context.CTCP.pageUrlWithReturn(
+        "product-detail.jsp?productId=2",
+        "profile-user.jsp?recordTab=published-products#profile-records"
+    ));
+    assert.equal(detailUrl.pathname, "/CTCP/product-detail.jsp");
+    assert.equal(detailUrl.searchParams.get("productId"), "2");
+    assert.equal(detailUrl.searchParams.get("returnTo"), "profile-user.jsp?recordTab=published-products#profile-records");
+    assert.equal(
+        context.CTCP.safePageUrl("https://malicious.example/collect", "secondhand.jsp"),
+        "http://localhost:8080/CTCP/secondhand.jsp",
+        "返回地址只能位于当前 web 应用内"
+    );
+    assert.equal(
+        context.CTCP.safePageUrl("http://user@localhost:8080/CTCP/profile-user.jsp", "secondhand.jsp"),
+        "http://localhost:8080/CTCP/secondhand.jsp",
+        "返回地址不能携带 URL 凭据"
+    );
 
     responseFactory = async () => ({
         ok: true,
@@ -81,7 +99,7 @@ async function main() {
         (error) => error.status === 409 && error.message === "商品已售出"
     );
 
-    console.log("API 客户端测试通过：跨端口地址、Session 凭证、JSON 请求、401/409 错误映射");
+    console.log("API 客户端测试通过：跨端口地址、来源返回、Session 凭证、JSON 请求、401/409 错误映射");
 }
 
 main().catch((error) => {

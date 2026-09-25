@@ -25,10 +25,12 @@ public class TaskOrderDAO {
     private JdbcTemplate jdbc;
 
     /**
-     * 按任务查接单记录。查不到返回 null。
+     * 按任务查接单记录。终止后同一任务可能有多条记录（cancelled + 新的 accepted），
+     * 这里优先返回「非 cancelled」的活动记录，全部 cancelled 时退回最新一条。查不到返回 null。
      */
     public TaskOrder findByTaskId(int taskId) {
-        String sql = "SELECT * FROM task_order WHERE task_id = ?";
+        String sql = "SELECT * FROM task_order WHERE task_id = ? "
+                + "ORDER BY (status <> 'cancelled') DESC, id DESC LIMIT 1";
         List<TaskOrder> list = jdbc.query(sql, new BeanPropertyRowMapper<>(TaskOrder.class), taskId);
         return list.isEmpty() ? null : list.get(0);
     }
@@ -70,5 +72,15 @@ public class TaskOrderDAO {
                 "UPDATE task_order SET status='completed', finished_at=datetime('now','localtime') "
               + "WHERE task_id=? AND publisher_id=? AND status IN ('accepted','delivered')",
                 taskId, publisherId);
+    }
+
+    /**
+     * 终止申请同意后，活动记录 accepted/delivered -> cancelled（增量契约：跑腿任务删除与双向终止 §5.7）。
+     */
+    public int markCancelled(int taskId) {
+        return jdbc.update(
+                "UPDATE task_order SET status='cancelled' "
+              + "WHERE task_id=? AND status IN ('accepted','delivered')",
+                taskId);
     }
 }

@@ -432,6 +432,27 @@
     transform: translateY(-2px);
 }
 
+.danger-action {
+    color: #c45f58;
+    background: #fff5f3;
+    border-color: #f6d9d4;
+}
+
+.danger-action:hover {
+    color: #a74640;
+    background: #ffe9e5;
+    border-color: #efc4bd;
+}
+
+.danger-action:disabled {
+    color: #b7a19f;
+    background: #f8f3f2;
+    border-color: #eee4e2;
+    cursor: not-allowed;
+    opacity: 0.78;
+    transform: none;
+}
+
 .detail-footnote {
     margin: 15px 0 0;
     color: #abb8b7;

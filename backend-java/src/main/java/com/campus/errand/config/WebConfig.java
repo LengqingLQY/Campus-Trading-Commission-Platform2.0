@@ -1,10 +1,16 @@
 package com.campus.errand.config;
 
+import com.campus.errand.interceptor.AdminInterceptor;
 import com.campus.errand.interceptor.AuthInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * 注册登录拦截器。
@@ -16,6 +22,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    /** 图片/头像上传目录，与 application.properties 的 app.upload.dir 对应。 */
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new AuthInterceptor())
@@ -24,6 +34,10 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/register",
                         "/api/login",
                         "/api/public/**");
+
+        // 管理员接口：注册在 AuthInterceptor 之后，先登录校验（401）、再角色校验（403）。
+        registry.addInterceptor(new AdminInterceptor())
+                .addPathPatterns("/api/admin/**");
     }
 
     /**
@@ -37,5 +51,20 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
+    }
+
+    /**
+     * 静态映射：把上传目录暴露为 /uploads/**，供 <img> 直接加载。
+     * 图片用 <img> 标签跨域加载不受 CORS 限制，无需在此配跨域。
+     */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
+        String location = dir.toUri().toString();
+        if (!location.endsWith("/")) {
+            location += "/";
+        }
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(location);
     }
 }

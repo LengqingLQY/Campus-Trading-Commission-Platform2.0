@@ -45,10 +45,16 @@
                 </a>
             </li>
             <li>
-                <span class="nav-link nav-link--profile nav-link--disabled" aria-disabled="true" title="个人空间不在本次前端范围">
+                <a class="nav-link nav-link--profile" href="profile-user.jsp">
                     <span class="nav-icon" aria-hidden="true">☻</span>
                     <span>个人空间</span>
-                </span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-link nav-link--admin" href="profile-admin.jsp" data-admin-link style="display:none;">
+                    <span class="nav-icon" aria-hidden="true">⚙</span>
+                    <span>管理员面板</span>
+                </a>
             </li>
         </ul>
     </nav>

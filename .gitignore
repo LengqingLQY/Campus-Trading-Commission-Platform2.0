@@ -44,7 +44,7 @@ target/
 *.sqlite
 *.sqlite3
 
-# 运行时上传内容
+# 图片/头像上传目录（运行时生成，不入库）
 uploads/
 
 # Python

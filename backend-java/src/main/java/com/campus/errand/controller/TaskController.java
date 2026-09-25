@@ -1,6 +1,7 @@
 package com.campus.errand.controller;
 
 import com.campus.errand.dto.TaskCreateDTO;
+import com.campus.errand.dto.TerminationRequestCreateDTO;
 import com.campus.errand.exception.BizException;
 import com.campus.errand.pojo.Result;
 import com.campus.errand.pojo.User;
@@ -77,6 +78,50 @@ public class TaskController {
     public Result complete(@PathVariable int id, HttpSession session) {
         taskService.completeTask(id, currentUser(session).getId());
         return Result.ok();
+    }
+
+    /**
+     * DELETE /api/tasks/{id} —— 发布者软删除任务（仅 open/completed）。
+     */
+    @DeleteMapping("/tasks/{id}")
+    public Result delete(@PathVariable int id, HttpSession session) {
+        taskService.deleteTask(id, currentUser(session).getId());
+        return Result.ok(Map.of("id", id));
+    }
+
+    /**
+     * POST /api/tasks/{id}/termination-request —— 发起终止申请。
+     */
+    @PostMapping("/tasks/{id}/termination-request")
+    public Result requestTermination(@PathVariable int id, @RequestBody TerminationRequestCreateDTO dto, HttpSession session) {
+        int requestId = taskService.createTerminationRequest(id, currentUser(session).getId(), dto.getReason());
+        return Result.ok(Map.of("id", requestId, "status", "pending"));
+    }
+
+    /**
+     * DELETE /api/tasks/{id}/termination-request —— 发起方撤回。
+     */
+    @DeleteMapping("/tasks/{id}/termination-request")
+    public Result withdrawTermination(@PathVariable int id, HttpSession session) {
+        taskService.withdrawTerminationRequest(id, currentUser(session).getId());
+        return Result.ok();
+    }
+
+    /**
+     * PUT /api/tasks/{id}/termination-request/reject —— 另一方拒绝。
+     */
+    @PutMapping("/tasks/{id}/termination-request/reject")
+    public Result rejectTermination(@PathVariable int id, HttpSession session) {
+        taskService.rejectTerminationRequest(id, currentUser(session).getId());
+        return Result.ok();
+    }
+
+    /**
+     * PUT /api/tasks/{id}/termination-request/approve —— 另一方同意。
+     */
+    @PutMapping("/tasks/{id}/termination-request/approve")
+    public Result approveTermination(@PathVariable int id, HttpSession session) {
+        return Result.ok(taskService.approveTerminationRequest(id, currentUser(session).getId()));
     }
 
     private User currentUser(HttpSession session) {

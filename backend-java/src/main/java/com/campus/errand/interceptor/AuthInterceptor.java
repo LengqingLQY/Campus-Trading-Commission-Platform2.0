@@ -19,6 +19,13 @@ public class AuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
 
+        // CORS 预检请求（OPTIONS）不携带 Cookie，这里必须放行，
+        // 交由 Spring 的 CORS 处理器响应；否则 PUT / POST(JSON) 等非简单请求
+        // 的预检会被误判为「未登录」返回 401，浏览器随之判定跨域失败。
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
 

@@ -40,7 +40,24 @@
         return `${entry.kind}-${entry.data.id}`;
     }
 
-    function todoMeta(role, status) {
+    function isPendingTermination(request) {
+        return Boolean(request && (!request.status || request.status === "pending"));
+    }
+
+    function terminationAction(role, status, request) {
+        if (status !== "created" && status !== "delivered") return "unavailable";
+        if (!isPendingTermination(request)) return "request";
+        return request.requesterRole === role ? "withdraw" : "review";
+    }
+
+    function todoMeta(role, status, terminationRequest) {
+        const termination = terminationAction(role, status, terminationRequest);
+        if (termination === "review") {
+            return {needsAction: true, statusText: "待处理终止申请"};
+        }
+        if (termination === "withdraw") {
+            return {needsAction: false, statusText: "待对方确认终止"};
+        }
         if (role === "seller" && status === "created") {
             return {needsAction: true, statusText: "待交付"};
         }
@@ -61,12 +78,12 @@
         const entries = [];
         (published || []).forEach((item) => {
             if (item.orderId && active.has(item.orderStatus)) {
-                entries.push(Object.assign({item, role: "seller"}, todoMeta("seller", item.orderStatus)));
+                entries.push(Object.assign({item, role: "seller"}, todoMeta("seller", item.orderStatus, item.terminationRequest)));
             }
         });
         (bought || []).forEach((item) => {
             if (item.orderId && active.has(item.orderStatus)) {
-                entries.push(Object.assign({item, role: "buyer"}, todoMeta("buyer", item.orderStatus)));
+                entries.push(Object.assign({item, role: "buyer"}, todoMeta("buyer", item.orderStatus, item.terminationRequest)));
             }
         });
         entries.sort((left, right) => Number(right.needsAction) - Number(left.needsAction));
@@ -87,5 +104,14 @@
         return {created: 1, delivered: 2, completed: 3, cancelled: 0}[status] || 0;
     }
 
-    return {shuffle, selectRecommendations, todoMeta, buildTradeTodos, orderAction, orderRank};
+    return {
+        shuffle,
+        selectRecommendations,
+        isPendingTermination,
+        terminationAction,
+        todoMeta,
+        buildTradeTodos,
+        orderAction,
+        orderRank
+    };
 });

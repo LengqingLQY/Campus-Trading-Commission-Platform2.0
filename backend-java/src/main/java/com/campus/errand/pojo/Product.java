@@ -20,6 +20,7 @@ public class Product {
     private Double price;
     private String location;
     private String contact;
+    private String imageUrls;       // 逗号分隔的图片 URL（增量契约：图片功能 §2，暂未接接口）
     private String auditStatus;
     private String auditRemark;
     private String status;          // on_sale / sold / completed
@@ -37,6 +38,9 @@ public class Product {
     private String buyerName;
     private Double dealPrice;
     private String buyTime;
+    private String deliveredAt;     // 卖家确认交付时间（product_order）
+    private String finishedAt;      // 买家确认收货时间（product_order）
+    private TerminationRequest terminationRequest;  // 进行中订单的待处理终止申请，无则 null
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -64,6 +68,9 @@ public class Product {
 
     public String getContact() { return contact; }
     public void setContact(String contact) { this.contact = contact; }
+
+    public String getImageUrls() { return imageUrls; }
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
 
     public String getAuditStatus() { return auditStatus; }
     public void setAuditStatus(String auditStatus) { this.auditStatus = auditStatus; }
@@ -109,4 +116,13 @@ public class Product {
 
     public String getBuyTime() { return buyTime; }
     public void setBuyTime(String buyTime) { this.buyTime = buyTime; }
+
+    public String getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(String deliveredAt) { this.deliveredAt = deliveredAt; }
+
+    public String getFinishedAt() { return finishedAt; }
+    public void setFinishedAt(String finishedAt) { this.finishedAt = finishedAt; }
+
+    public TerminationRequest getTerminationRequest() { return terminationRequest; }
+    public void setTerminationRequest(TerminationRequest terminationRequest) { this.terminationRequest = terminationRequest; }
 }

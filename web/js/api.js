@@ -68,6 +68,47 @@
         return new URL(path, WEB_BASE).href;
     }
 
+    /** 返回当前 JSP 相对 web 根目录的地址，并保留查询参数与锚点。 */
+    function currentPagePath() {
+        try {
+            const current = new URL(location.href);
+            const basePath = WEB_BASE.pathname.endsWith("/") ? WEB_BASE.pathname : `${WEB_BASE.pathname}/`;
+            if (current.origin !== WEB_BASE.origin || !current.pathname.startsWith(basePath)) {
+                return "";
+            }
+            const relativePath = current.pathname.slice(basePath.length) || "main.jsp";
+            return `${relativePath}${current.search}${current.hash}`;
+        } catch (error) {
+            return "";
+        }
+    }
+
+    /** 为详情页附加来源地址，使返回操作不依赖固定页面。 */
+    function pageUrlWithReturn(path, returnPath) {
+        const target = new URL(path, WEB_BASE);
+        const source = returnPath || currentPagePath();
+        if (source) target.searchParams.set("returnTo", source);
+        return target.href;
+    }
+
+    /** 只接受当前 web 应用内的返回地址，阻止 returnTo 形成站外跳转。 */
+    function safePageUrl(path, fallbackPath) {
+        const fallback = pageUrl(fallbackPath || "secondhand.jsp");
+        if (typeof path !== "string" || !path.trim()) return fallback;
+        try {
+            const target = new URL(path, WEB_BASE);
+            const basePath = WEB_BASE.pathname.endsWith("/") ? WEB_BASE.pathname : `${WEB_BASE.pathname}/`;
+            if (target.username || target.password
+                || target.origin !== WEB_BASE.origin
+                || !target.pathname.startsWith(basePath)) {
+                return fallback;
+            }
+            return target.href;
+        } catch (error) {
+            return fallback;
+        }
+    }
+
     async function currentUser(force) {
         if (force || !currentUserPromise) {
             currentUserPromise = request("/users/me").catch((error) => {
@@ -175,6 +216,10 @@
             node.textContent = initial(user && user.username);
         });
 
+        document.querySelectorAll("[data-admin-link]").forEach((node) => {
+            node.style.display = user && user.role === "admin" ? "" : "none";
+        });
+
         const logout = document.querySelector("[data-action='logout']");
         if (logout) {
             logout.addEventListener("click", async (event) => {
@@ -200,6 +245,9 @@
         request,
         query,
         pageUrl,
+        currentPagePath,
+        pageUrlWithReturn,
+        safePageUrl,
         currentUser,
         requireUser,
         resetCurrentUser,

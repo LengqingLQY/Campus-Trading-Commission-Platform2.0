@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS user (
     qq            TEXT,                                 -- 允许为空，不做格式校验
     wechat        TEXT,
     phone         TEXT,
+    avatar_url    TEXT,                                 -- 头像 URL（增量契约：图片功能 §2）
     role          TEXT    NOT NULL DEFAULT 'user'
                           CHECK (role IN ('user', 'admin')),
     status        TEXT    NOT NULL DEFAULT 'active'     -- 预留：后续做封禁
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS task (
     amount        REAL    NOT NULL DEFAULT 0            -- 跑腿费（元），仅记录，不接支付
                           CHECK (amount >= 0),
     contact       TEXT    NOT NULL DEFAULT '',          -- 联系方式/备注，纯文本
+    image_urls    TEXT,                                 -- 逗号分隔的图片 URL（增量契约：图片功能 §2）
 
     -- 审核维度：控制普通用户能否看到；当前用户接口显式写 approved，后续管理员模块再操作
     audit_status  TEXT    NOT NULL DEFAULT 'pending'
@@ -85,6 +87,7 @@ CREATE TABLE IF NOT EXISTS product (
                           CHECK (price >= 0),
     location      TEXT    NOT NULL DEFAULT '',          -- 交易地点
     contact       TEXT    NOT NULL DEFAULT '',
+    image_urls    TEXT,                                 -- 逗号分隔的图片 URL（增量契约：图片功能 §2）
 
     -- 当前用户接口显式写 approved；pending/rejected 为后续审核模块预留
     audit_status  TEXT    NOT NULL DEFAULT 'pending'
@@ -108,9 +111,11 @@ CREATE TABLE IF NOT EXISTS product (
 -- ============================ 4. 跑腿记录表 ============================
 -- 谁接了哪条任务，个人空间「我接取的任务」由此表查出
 -- 完成需要双方确认：接单方标记送达 -> 发布者确认收到，才算 completed
+-- 终止申请同意后 task_order 变 cancelled、task 回到 open，可再次被接取，
+-- 故 task_id 不再用列级 UNIQUE，改为下方「仅非 cancelled 唯一」的部分索引。
 CREATE TABLE IF NOT EXISTS task_order (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    task_id      INTEGER NOT NULL UNIQUE REFERENCES task(id),  -- UNIQUE：一个任务只能被接一次
+    task_id      INTEGER NOT NULL REFERENCES task(id),
     publisher_id INTEGER NOT NULL REFERENCES user(id),         -- 冗余存一份，个人空间查询免 JOIN
     accepter_id  INTEGER NOT NULL REFERENCES user(id),
     status       TEXT    NOT NULL DEFAULT 'accepted'
@@ -122,21 +127,75 @@ CREATE TABLE IF NOT EXISTS task_order (
     CHECK (accepter_id <> publisher_id)                         -- 不能接取自己发布的任务（§6 自操作）
 );
 
+-- 同一任务最多存在一条「非已终止」跑腿记录；终止后任务恢复 open 可再次被接取，
+-- 同时保留多条历史 cancelled 记录（增量契约：跑腿任务删除与双向终止 §3.2）。
+CREATE UNIQUE INDEX IF NOT EXISTS uq_task_order_non_cancelled_task
+    ON task_order(task_id)
+ WHERE status <> 'cancelled';
+
 
 -- ============================ 5. 购买记录表 ============================
 CREATE TABLE IF NOT EXISTS product_order (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_id  INTEGER NOT NULL UNIQUE REFERENCES product(id), -- UNIQUE：一件商品只能被买一次
-    seller_id   INTEGER NOT NULL REFERENCES user(id),
-    buyer_id    INTEGER NOT NULL REFERENCES user(id),
-    price       REAL    NOT NULL DEFAULT 0,                     -- 成交价快照，卖家改价不影响历史记录
-    status      TEXT    NOT NULL DEFAULT 'created'
-                        CHECK (status IN ('created', 'completed', 'cancelled')),
-    created_at  TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
-    finished_at TEXT,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id   INTEGER NOT NULL REFERENCES product(id), -- 一件商品可有多条历史订单（终止后可再次售出）
+    seller_id    INTEGER NOT NULL REFERENCES user(id),
+    buyer_id     INTEGER NOT NULL REFERENCES user(id),
+    price        REAL    NOT NULL DEFAULT 0,                     -- 成交价快照，卖家改价不影响历史记录
+    status       TEXT    NOT NULL DEFAULT 'created'
+                         CHECK (status IN ('created', 'delivered', 'completed', 'cancelled')),
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    delivered_at TEXT,                                           -- 卖家点「确认已交付」的时间
+    finished_at  TEXT,                                           -- 买家点「确认收货」的时间
+    cancelled_at TEXT,                                           -- 双方同意终止的时间
 
-    CHECK (buyer_id <> seller_id)                               -- 不能购买自己的商品（§6 自操作）
+    CHECK (buyer_id <> seller_id)                                -- 不能购买自己的商品（§6 自操作）
 );
+
+-- 同一商品最多存在一条「非已终止」订单；终止后商品恢复 on_sale 可再次售出，
+-- 同时保留多条历史 cancelled 订单（增量契约：二手商品软删除确认与订单双向终止 §4.2）。
+CREATE UNIQUE INDEX IF NOT EXISTS uq_product_order_non_cancelled_product
+    ON product_order(product_id)
+ WHERE status <> 'cancelled';
+
+
+-- ============================ 6. 终止申请记录表 ============================
+-- 订单处于 created/delivered 时买卖任一方可发起终止申请，另一方同意后才真正终止。
+CREATE TABLE IF NOT EXISTS product_order_termination_request (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id     INTEGER NOT NULL REFERENCES product_order(id),
+    requester_id INTEGER NOT NULL REFERENCES user(id),           -- 发起终止的一方
+    reason       TEXT    NOT NULL,                               -- 2~200 字，对方可见
+    status       TEXT    NOT NULL DEFAULT 'pending'
+                         CHECK (status IN ('pending', 'approved', 'rejected', 'withdrawn')),
+    responder_id INTEGER REFERENCES user(id),                    -- 处理终止的另一方
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    resolved_at  TEXT
+);
+
+-- 同一订单最多存在一条待处理申请
+CREATE UNIQUE INDEX IF NOT EXISTS uq_product_order_pending_termination
+    ON product_order_termination_request(order_id)
+ WHERE status = 'pending';
+
+
+-- ============================ 7. 跑腿任务终止申请记录表 ============================
+-- 任务处于 accepted/delivered 时发布者或接取者任一方可发起终止申请，另一方同意后才真正终止。
+CREATE TABLE IF NOT EXISTS task_termination_request (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id      INTEGER NOT NULL REFERENCES task(id),
+    requester_id INTEGER NOT NULL REFERENCES user(id),           -- 发起终止的一方
+    reason       TEXT    NOT NULL,                               -- 2~200 字，对方可见
+    status       TEXT    NOT NULL DEFAULT 'pending'
+                         CHECK (status IN ('pending', 'approved', 'rejected', 'withdrawn')),
+    responder_id INTEGER REFERENCES user(id),                    -- 处理终止的另一方
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    resolved_at  TEXT
+);
+
+-- 同一任务最多存在一条待处理申请
+CREATE UNIQUE INDEX IF NOT EXISTS uq_task_pending_termination
+    ON task_termination_request(task_id)
+ WHERE status = 'pending';
 
 
 -- ============================ 索引 ============================

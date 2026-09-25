@@ -211,7 +211,8 @@
 .nav-link--active,
 .app-page--task .nav-link--task,
 .app-page--secondhand .nav-link--secondhand,
-.app-page--profile .nav-link--profile {
+.app-page--profile .nav-link--profile,
+.app-page--admin .nav-link--admin {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.13);
     border-color: rgba(255, 255, 255, 0.08);
@@ -221,7 +222,8 @@
 .nav-link--active,
 .app-page--task .nav-link--task,
 .app-page--secondhand .nav-link--secondhand,
-.app-page--profile .nav-link--profile {
+.app-page--profile .nav-link--profile,
+.app-page--admin .nav-link--admin {
     box-shadow: 0 7px 16px rgba(0, 77, 75, 0.12);
 }
 
@@ -229,7 +231,8 @@
 .nav-link--active::before,
 .app-page--task .nav-link--task::before,
 .app-page--secondhand .nav-link--secondhand::before,
-.app-page--profile .nav-link--profile::before {
+.app-page--profile .nav-link--profile::before,
+.app-page--admin .nav-link--admin::before {
     opacity: 1;
     transform: scaleY(1);
 }

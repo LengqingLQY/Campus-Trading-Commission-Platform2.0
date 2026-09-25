@@ -36,6 +36,19 @@ assert.ok(todos[0].needsAction && todos[1].needsAction, "需要当前用户操�
 assert.equal(domain.todoMeta("seller", "created").statusText, "待交付");
 assert.equal(domain.todoMeta("buyer", "delivered").statusText, "待确认收货");
 
+const buyerTermination = {
+    status: "pending",
+    requesterRole: "buyer",
+    reason: "时间无法协调",
+    createdAt: "2026-09-25 12:00:00"
+};
+assert.equal(domain.terminationAction("buyer", "created", buyerTermination), "withdraw");
+assert.equal(domain.terminationAction("seller", "created", buyerTermination), "review");
+assert.equal(domain.terminationAction("buyer", "completed", null), "unavailable");
+assert.equal(domain.todoMeta("seller", "created", buyerTermination).statusText, "待处理终止申请");
+assert.ok(domain.todoMeta("seller", "created", buyerTermination).needsAction, "终止申请应置顶提醒另一方处理");
+assert.equal(domain.todoMeta("buyer", "created", buyerTermination).statusText, "待对方确认终止");
+
 assert.equal(domain.orderAction("seller", "created"), "deliver");
 assert.equal(domain.orderAction("buyer", "created"), "waiting_seller");
 assert.equal(domain.orderAction("seller", "delivered"), "waiting_buyer");
@@ -61,4 +74,12 @@ const source = scripts.map((name) => fs.readFileSync(path.join(webRoot, "js", na
     "/me/products", "/product-orders/"
 ].forEach((endpoint) => assert.ok(source.includes(endpoint), `前端应引用接口 ${endpoint}`));
 
-console.log(`前端契约测试通过：推荐流、4 种待办、5 种订单动作、${pages.length} 个页面资源`);
+const productDetailScript = fs.readFileSync(path.join(webRoot, "js/product-detail.js"), "utf8");
+const productOrderScript = fs.readFileSync(path.join(webRoot, "js/product-order.js"), "utf8");
+assert.ok(productDetailScript.includes("pageUrlWithReturn") || source.includes("pageUrlWithReturn"), "商品详情入口应记录来源页面");
+assert.ok(productDetailScript.includes("method: \"DELETE\""), "商品详情应接入发布者删除商品接口");
+assert.ok(productDetailScript.includes("data-action=\"delete\""), "商品详情应渲染发布者删除操作");
+assert.ok(productOrderScript.includes("/termination-request"), "交易页应接入终止申请接口");
+assert.ok(productOrderScript.includes("/approve") && productOrderScript.includes("/reject"), "交易页应支持另一方同意或拒绝终止");
+
+console.log(`前端契约测试通过：来源返回、软删除、双向终止、推荐流、4 种待办、5 种订单动作、${pages.length} 个页面资源`);

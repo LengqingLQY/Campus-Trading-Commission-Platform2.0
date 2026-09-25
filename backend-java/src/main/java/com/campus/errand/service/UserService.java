@@ -92,6 +92,7 @@ public class UserService {
             throw new BizException(401, "未登录");
         }
 
+        boolean hasAvatar = dto.getAvatarUrl() != null;
         boolean hasProfile = dto.getUsername() != null || dto.getQq() != null
                 || dto.getWechat() != null || dto.getPhone() != null;
         boolean hasOld = dto.getOldPassword() != null;
@@ -101,7 +102,7 @@ public class UserService {
         if (hasOld != hasNew) {
             throw new BizException(400, "修改密码需同时提供旧密码和新密码");
         }
-        if (!hasProfile && !hasOld) {
+        if (!hasProfile && !hasAvatar && !hasOld) {
             throw new BizException(400, "没有需要修改的内容");
         }
 
@@ -123,5 +124,20 @@ public class UserService {
             String phone = dto.getPhone() != null ? dto.getPhone() : current.getPhone();
             userDAO.updateProfile(id, username, qq, wechat, phone);
         }
+
+        if (hasAvatar) {
+            // 空字符串表示恢复默认头像（增量契约：图片功能 §8.2）
+            userDAO.updateAvatar(id, dto.getAvatarUrl());
+        }
+    }
+
+    /**
+     * 上传头像后更新头像 URL（增量契约：图片功能 §3.2）。
+     */
+    public void updateAvatar(int id, String avatarUrl) {
+        if (userDAO.findById(id) == null) {
+            throw new BizException(401, "未登录");
+        }
+        userDAO.updateAvatar(id, avatarUrl);
     }
 }
