@@ -128,23 +128,34 @@
             list.innerHTML = '<div class="empty-state"><span>📋</span><h3>没有匹配的任务</h3><p>换个状态筛选试试。</p></div>';
             return;
         }
-        var html = '<div class="record-section-label">📋 任务审核</div>';
+        var html = '';
         items.forEach(function (item) {
             var tag = auditNames[item.auditStatus] || item.auditStatus;
             var cls = item.auditStatus === "pending" ? "pending" : (item.auditStatus === "approved" ? "done" : "");
             var remark = (item.auditStatus === "rejected" && item.auditRemark) ? ' · 驳回理由：' + api.escapeHtml(item.auditRemark) : '';
-            var actions = item.auditStatus === "pending"
-                ? '<button class="btn-sm btn-approve" data-approve-task="' + item.id + '">✅ 通过</button>' +
-                  '<button class="btn-sm btn-reject" data-reject-task="' + item.id + '">❌ 驳回</button>'
-                : '<button class="btn-sm btn-reject" data-delete-task="' + item.id + '">🗑 删除</button>';
+            var detailLink = '<a class="btn-sm btn-detail" href="' + api.pageUrl("task-detail.jsp?taskId=" + item.id) + '" target="_blank" style="background:#1890ff;color:#fff;text-decoration:none;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;display:inline-block;">查看详情</a>';
+
+            var actions = '';
+            if (item.auditStatus === "pending") {
+                actions = detailLink +
+                    '<button class="btn-sm btn-approve" data-approve-task="' + item.id + '">通过</button>' +
+                    '<button class="btn-sm btn-reject" data-reject-task="' + item.id + '">驳回</button>';
+            } else if (item.auditStatus === "approved" && item.status === "completed") {
+                actions = detailLink +
+                    '<button class="btn-sm btn-reject" data-delete-task="' + item.id + '">删除</button>';
+            } else {
+                actions = detailLink +
+                    '<span class="status-tag" style="background:#f5f5f5;color:#999;font-size:10px;padding:4px 10px;border-radius:8px;">不可删除</span>';
+            }
+
             html += '<div class="admin-item">' +
                 '<div class="admin-info">' +
-                    '<span class="admin-title">' + api.escapeHtml(item.title) + '</span>' +
-                    '<span class="status-tag ' + cls + '" style="margin-left:6px;">' + api.escapeHtml(tag) + '</span>' +
-                    '<p class="admin-meta">发布者：' + api.escapeHtml(item.publisherName || "校园同学") + ' · 金额：' + api.money(item.amount) + ' 元' + remark + '</p>' +
+                '<span class="admin-title">' + api.escapeHtml(item.title) + '</span>' +
+                '<span class="status-tag ' + cls + '" style="margin-left:6px;">' + api.escapeHtml(tag) + '</span>' +
+                '<p class="admin-meta">发布者：' + api.escapeHtml(item.publisherName || "校园同学") + ' · 金额：' + api.money(item.amount) + ' 元' + remark + '</p>' +
                 '</div>' +
                 '<div class="admin-actions">' + actions + '</div>' +
-            '</div>';
+                '</div>';
         });
         list.innerHTML = html;
     }
@@ -155,23 +166,34 @@
             list.innerHTML = '<div class="empty-state"><span>🛒</span><h3>没有匹配的商品</h3><p>换个状态筛选试试。</p></div>';
             return;
         }
-        var html = '<div class="record-section-label">🛒 商品审核</div>';
+        var html = '';
         items.forEach(function (item) {
             var tag = auditNames[item.auditStatus] || item.auditStatus;
             var cls = item.auditStatus === "pending" ? "pending" : (item.auditStatus === "approved" ? "done" : "");
             var remark = (item.auditStatus === "rejected" && item.auditRemark) ? ' · 驳回理由：' + api.escapeHtml(item.auditRemark) : '';
-            var actions = item.auditStatus === "pending"
-                ? '<button class="btn-sm btn-approve" data-approve-product="' + item.id + '">✅ 通过</button>' +
-                  '<button class="btn-sm btn-reject" data-reject-product="' + item.id + '">❌ 驳回</button>'
-                : '<button class="btn-sm btn-reject" data-delete-product="' + item.id + '">🗑 删除</button>';
+            var detailLink = '<a class="btn-sm btn-detail" href="' + api.pageUrl("product-detail.jsp?productId=" + item.id) + '" target="_blank" style="background:#1890ff;color:#fff;text-decoration:none;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;display:inline-block;">查看详情</a>';
+
+            var actions = '';
+            if (item.auditStatus === "pending") {
+                actions = detailLink +
+                    '<button class="btn-sm btn-approve" data-approve-product="' + item.id + '">通过</button>' +
+                    '<button class="btn-sm btn-reject" data-reject-product="' + item.id + '">驳回</button>';
+            } else if (item.auditStatus === "approved" && item.status === "sold") {
+                actions = detailLink +
+                    '<button class="btn-sm btn-reject" data-delete-product="' + item.id + '">删除</button>';
+            } else {
+                actions = detailLink +
+                    '<span class="status-tag" style="background:#f5f5f5;color:#999;font-size:10px;padding:4px 10px;border-radius:8px;">不可删除</span>';
+            }
+
             html += '<div class="admin-item">' +
                 '<div class="admin-info">' +
-                    '<span class="admin-title">' + api.escapeHtml(item.title) + '</span>' +
-                    '<span class="status-tag ' + cls + '" style="margin-left:6px;">' + api.escapeHtml(tag) + '</span>' +
-                    '<p class="admin-meta">卖家：' + api.escapeHtml(item.sellerName || "校园同学") + ' · 价格：' + api.money(item.price) + ' 元' + remark + '</p>' +
+                '<span class="admin-title">' + api.escapeHtml(item.title) + '</span>' +
+                '<span class="status-tag ' + cls + '" style="margin-left:6px;">' + api.escapeHtml(tag) + '</span>' +
+                '<p class="admin-meta">卖家：' + api.escapeHtml(item.sellerName || "校园同学") + ' · 价格：' + api.money(item.price) + ' 元' + remark + '</p>' +
                 '</div>' +
                 '<div class="admin-actions">' + actions + '</div>' +
-            '</div>';
+                '</div>';
         });
         list.innerHTML = html;
     }
@@ -182,7 +204,7 @@
             list.innerHTML = '<div class="empty-state"><span>👥</span><h3>没有匹配的用户</h3><p>换个关键词试试。</p></div>';
             return;
         }
-        var html = '<div class="record-section-label">👥 用户管理</div>';
+        var html = '';
         items.forEach(function (item) {
             if (state.editingUserId === item.id) {
                 html += renderUserEdit(item);
@@ -191,34 +213,35 @@
             var isAdmin = item.role === "admin";
             html += '<div class="admin-item">' +
                 '<div class="admin-info">' +
-                    '<span class="admin-title">' + api.escapeHtml(item.username) + '</span>' +
-                    '<span class="status-tag" style="margin-left:6px;">' + (isAdmin ? "管理员" : "普通用户") + '</span>' +
-                    '<p class="admin-meta">账号：' + api.escapeHtml(item.account) + ' · QQ：' + api.escapeHtml(item.qq || "—") + ' · 微信：' + api.escapeHtml(item.wechat || "—") + ' · 电话：' + api.escapeHtml(item.phone || "—") + '</p>' +
+                '<span class="admin-title">' + api.escapeHtml(item.username) + '</span>' +
+                '<span class="status-tag" style="margin-left:6px;">' + (isAdmin ? "管理员" : "普通用户") + '</span>' +
+                '<p class="admin-meta">账号：' + api.escapeHtml(item.account) + ' · QQ：' + api.escapeHtml(item.qq || "—") + ' · 微信：' + api.escapeHtml(item.wechat || "—") + ' · 电话：' + api.escapeHtml(item.phone || "—") + '</p>' +
                 '</div>' +
                 '<div class="admin-actions">' +
-                    '<button class="btn-sm btn-edit" data-edit-user="' + item.id + '">✏️ 编辑</button>' +
-                    '<button class="btn-sm btn-reset" data-reset-user="' + item.id + '">🔒 重置密码</button>' +
+                '<button class="btn-sm btn-edit" data-edit-user="' + item.id + '">编辑</button>' +
+                '<button class="btn-sm btn-reset" data-reset-user="' + item.id + '">重置密码</button>' +
                 '</div>' +
-            '</div>';
+                '</div>';
         });
         list.innerHTML = html;
     }
 
+    // ===== 渲染：用户编辑模式 =====
     function renderUserEdit(item) {
-        return '<div class="admin-item">' +
+        return '<div class="admin-item admin-item--editing">' +
             '<div class="admin-info" style="flex:1;">' +
-                '<div class="publish-form-grid" style="margin:0;">' +
-                    '<div class="form-field"><label>昵称</label><input type="text" data-edit-username value="' + api.escapeHtml(item.username || "") + '"></div>' +
-                    '<div class="form-field"><label>QQ</label><input type="text" data-edit-qq value="' + api.escapeHtml(item.qq || "") + '"></div>' +
-                    '<div class="form-field"><label>微信</label><input type="text" data-edit-wechat value="' + api.escapeHtml(item.wechat || "") + '"></div>' +
-                    '<div class="form-field"><label>电话</label><input type="text" data-edit-phone value="' + api.escapeHtml(item.phone || "") + '"></div>' +
-                '</div>' +
+            '<div class="user-edit-form">' +
+            '<div class="user-edit-field"><label>昵称</label><input type="text" data-edit-username value="' + api.escapeHtml(item.username || "") + '"></div>' +
+            '<div class="user-edit-field"><label>QQ</label><input type="text" data-edit-qq value="' + api.escapeHtml(item.qq || "") + '"></div>' +
+            '<div class="user-edit-field"><label>微信</label><input type="text" data-edit-wechat value="' + api.escapeHtml(item.wechat || "") + '"></div>' +
+            '<div class="user-edit-field"><label>电话</label><input type="text" data-edit-phone value="' + api.escapeHtml(item.phone || "") + '"></div>' +
+            '</div>' +
             '</div>' +
             '<div class="admin-actions">' +
-                '<button class="btn-sm btn-approve" data-save-user="' + item.id + '">💾 保存</button>' +
-                '<button class="btn-sm" data-cancel-user>取消</button>' +
+            '<button class="btn-sm btn-approve" data-save-user="' + item.id + '">保存</button>' +
+            '<button class="btn-sm btn-cancel" data-cancel-user>取消</button>' +
             '</div>' +
-        '</div>';
+            '</div>';
     }
 
     // ===== 事件委托 =====

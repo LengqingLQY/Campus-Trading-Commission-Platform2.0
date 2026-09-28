@@ -46,7 +46,7 @@
                 '<span class="record-title">' + api.escapeHtml(item.title) + '</span>' +
                 '<span class="status-tag ' + cls + '">' + api.escapeHtml(st) + '</span>' +
                 '<p class="record-meta">' + amountText + '：' + api.money(amountVal) + ' 元</p>' +
-            '</a>';
+                '</a>';
         }
 
         var auditText = auditNames[audit] || "待审核";
@@ -55,7 +55,24 @@
             '<span class="record-title">' + api.escapeHtml(item.title) + '</span>' +
             '<span class="status-tag pending">' + api.escapeHtml(auditText) + '</span>' +
             '<p class="record-meta">' + amountText + '：' + api.money(amountVal) + ' 元' + remark + '</p>' +
-        '</div>';
+            '</div>';
+    }
+
+    // ===== 同步侧边栏头像 =====
+    function syncSidebarAvatar(avatarUrl, username) {
+        var sidebarAvatar = document.querySelector("[data-user-avatar]");
+        if (!sidebarAvatar) return;
+        var name = username || (userData && userData.username) || "同学";
+        var initialLetter = api.initial(name);
+        if (avatarUrl) {
+            sidebarAvatar.style.backgroundImage = "url(" + api.escapeHtml(avatarUrl) + ")";
+            sidebarAvatar.style.backgroundSize = "cover";
+            sidebarAvatar.style.backgroundPosition = "center";
+            sidebarAvatar.textContent = "";
+        } else {
+            sidebarAvatar.style.backgroundImage = "";
+            sidebarAvatar.textContent = initialLetter;
+        }
     }
 
     // ===== 加载用户资料 =====
@@ -63,8 +80,6 @@
         try {
             userData = await api.requireUser();
             var initialLetter = api.initial(userData.username);
-            document.querySelector("[data-profile-avatar]").textContent = initialLetter;
-            document.querySelector("[data-profile-name]").textContent = userData.username + "的空间";
 
             var avatarContainer = document.querySelector("[data-profile-avatar-lg]");
             if (avatarContainer) {
@@ -84,10 +99,10 @@
                 }
             }
 
+            // 同步侧边栏头像
+            syncSidebarAvatar(userData.avatarUrl, userData.username);
+
             document.querySelector("[data-profile-username]").textContent = userData.username;
-            document.querySelector("[data-profile-qq]").textContent = userData.qq || "—";
-            document.querySelector("[data-profile-wechat]").textContent = userData.wechat || "—";
-            document.querySelector("[data-profile-phone]").textContent = userData.phone || "—";
             document.querySelector("[data-profile-input-username]").value = userData.username || "";
             document.querySelector("[data-profile-input-qq]").value = userData.qq || "";
             document.querySelector("[data-profile-input-wechat]").value = userData.wechat || "";
@@ -116,7 +131,14 @@
         var wechat = String(formData.get("wechat") || "").trim();
         if (wechat !== undefined) body.wechat = wechat;
         var phone = String(formData.get("phone") || "").trim();
-        if (phone !== undefined) body.phone = phone;
+        if (phone !== undefined) {
+            // 手机号校验：如果填写了，必须是 11 位数字
+            if (phone && !/^\d{11}$/.test(phone)) {
+                api.setFeedback(feedback, "电话必须为 11 位数字");
+                return;
+            }
+            body.phone = phone;
+        }
 
         var oldPassword = String(formData.get("oldPassword") || "").trim();
         var newPassword = String(formData.get("newPassword") || "").trim();
@@ -150,13 +172,17 @@
     function initAvatarUpload() {
         var avatarContainer = document.querySelector("[data-profile-avatar-lg]");
         var fileInput = document.querySelector("#avatarInput");
+        var uploadBtn = document.querySelector("[data-action='upload-avatar']");
+        var resetBtn = document.querySelector("[data-action='reset-avatar']");
         if (!avatarContainer || !fileInput) return;
 
-        // 点击头像触发上传（但点击「恢复默认」时不上传）
-        avatarContainer.addEventListener("click", function(e) {
-            if (e.target.closest("[data-action='reset-avatar']")) return;
-            fileInput.click();
-        });
+        // 点击「更换头像」按钮触发文件选择
+        if (uploadBtn) {
+            uploadBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                fileInput.click();
+            });
+        }
 
         fileInput.addEventListener("change", function() {
             var file = this.files[0];
@@ -169,14 +195,16 @@
 
             var reader = new FileReader();
             reader.onload = function(e) {
-                // 先本地预览
                 avatarContainer.style.backgroundImage = "url(" + e.target.result + ")";
                 avatarContainer.style.backgroundSize = "cover";
                 avatarContainer.style.backgroundPosition = "center";
                 var letterEl = avatarContainer.querySelector("[data-avatar-letter]");
                 if (letterEl) letterEl.style.display = "none";
 
-                // 真实头像上传接口
+                // 上传前先预览到侧边栏
+                var username = userData ? userData.username : "同学";
+                syncSidebarAvatar(e.target.result, username);
+
                 var fd = new FormData();
                 fd.append("avatar", file);
                 fetch("http://localhost:8081/api/users/me/avatar", {
@@ -184,53 +212,54 @@
                     body: fd,
                     credentials: "include"
                 })
-                .then(function(response) { return response.json(); })
-                .then(function(result) {
-                    if (result.code === 0) {
-                        api.toast("头像已更新", "success");
-                        api.resetCurrentUser();
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.code === 0) {
+                            api.toast("头像已更新", "success");
+                            api.resetCurrentUser();
+                            loadProfile();
+                        } else {
+                            throw new Error(result.msg || "上传失败");
+                        }
+                    })
+                    .catch(function(error) {
+                        alert("头像上传失败：" + error.message);
                         loadProfile();
-                    } else {
-                        throw new Error(result.msg || "上传失败");
-                    }
-                })
-                .catch(function(error) {
-                    alert("头像上传失败：" + error.message);
-                    loadProfile();
-                });
+                    });
             };
             reader.readAsDataURL(file);
         });
 
         // ===== 恢复默认头像 =====
-        var resetBtn = avatarContainer.querySelector("[data-action='reset-avatar']");
         if (resetBtn) {
             resetBtn.addEventListener("click", function(e) {
                 e.stopPropagation();
                 if (!confirm("确认恢复默认头像吗？")) return;
 
-                // 清除背景图，显示字母
                 avatarContainer.style.backgroundImage = "";
                 var letterEl = avatarContainer.querySelector("[data-avatar-letter]");
+                var username = userData ? userData.username : "同学";
                 if (letterEl) {
                     letterEl.style.display = "";
-                    letterEl.textContent = api.initial(userData ? userData.username : "同");
+                    letterEl.textContent = api.initial(username);
                 }
 
-                // 调用后端清空 avatarUrl
+                // 同步侧边栏恢复默认
+                syncSidebarAvatar(null, username);
+
                 api.request("/users/me", {
                     method: "PUT",
                     body: { avatarUrl: "" }
                 })
-                .then(function() {
-                    api.toast("已恢复默认头像", "success");
-                    api.resetCurrentUser();
-                    loadProfile();
-                })
-                .catch(function(error) {
-                    api.toast("操作失败：" + error.message, "error");
-                    loadProfile();
-                });
+                    .then(function() {
+                        api.toast("已恢复默认头像", "success");
+                        api.resetCurrentUser();
+                        loadProfile();
+                    })
+                    .catch(function(error) {
+                        api.toast("操作失败：" + error.message, "error");
+                        loadProfile();
+                    });
             });
         }
     }
@@ -296,14 +325,13 @@
                 "accepted": "你还没有接取任何任务",
                 "bought": "你还没有购买任何商品"
             };
-            list.innerHTML = '<div class="empty-state"><span>📭</span><h3>' + (labels[type] || "暂无记录") + '</h3></div>';
+            list.innerHTML = '<div class="empty-state"><h3>' + (labels[type] || "暂无记录") + '</h3></div>';
             return;
         }
 
         var html = "";
 
         if (type === "published-tasks") {
-            html = '<div class="record-section-label">📌 我发布的任务</div>';
             items.forEach(function(item) {
                 var canDelete = item.status === "open" || item.status === "completed";
                 var deleteBtn = canDelete
@@ -311,15 +339,14 @@
                     : '<span class="status-tag" style="background:#f5f5f5;color:#999;font-size:10px;">不可删除</span>';
                 html +=
                     '<div class="record-item" data-task-id="' + item.id + '">' +
-                        publishedInfo(item, type, "task") +
-                        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
-                            '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
-                            deleteBtn +
-                        '</div>' +
+                    publishedInfo(item, type, "task") +
+                    '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+                    '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
+                    deleteBtn +
+                    '</div>' +
                     '</div>';
             });
         } else if (type === "published-products") {
-            html = '<div class="record-section-label">📌 我上架的商品</div>';
             items.forEach(function(item) {
                 var canDelete = item.status === "on_sale" || item.status === "completed";
                 var deleteBtn = canDelete
@@ -327,46 +354,44 @@
                     : '<span class="status-tag" style="background:#f5f5f5;color:#999;font-size:10px;">不可删除</span>';
                 html +=
                     '<div class="record-item" data-product-id="' + item.id + '">' +
-                        publishedInfo(item, type, "product") +
-                        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
-                            '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
-                            deleteBtn +
-                        '</div>' +
+                    publishedInfo(item, type, "product") +
+                    '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+                    '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
+                    deleteBtn +
+                    '</div>' +
                     '</div>';
             });
         } else if (type === "accepted") {
-            html = '<div class="record-section-label">📌 我接取的任务</div>';
             items.forEach(function(item) {
                 var st = statusNames[item.status] || item.status;
                 var cls = statusClass[item.status] || "";
                 html +=
                     '<a class="record-item" href="' + api.pageUrlWithReturn("task-detail.jsp?taskId=" + item.id, profileReturnPath(type)) + '">' +
-                        '<div class="record-info">' +
-                            '<span class="record-title">' + api.escapeHtml(item.title) + '</span>' +
-                            '<span class="status-tag ' + cls + '">' + api.escapeHtml(st) + '</span>' +
-                            '<p class="record-meta">发布者：' + api.escapeHtml(item.publisherName || "校园同学") + ' · 金额：' + api.money(item.amount) + ' 元</p>' +
-                        '</div>' +
-                        '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
+                    '<div class="record-info">' +
+                    '<span class="record-title">' + api.escapeHtml(item.title) + '</span>' +
+                    '<span class="status-tag ' + cls + '">' + api.escapeHtml(st) + '</span>' +
+                    '<p class="record-meta">发布者：' + api.escapeHtml(item.publisherName || "校园同学") + ' · 金额：' + api.money(item.amount) + ' 元</p>' +
+                    '</div>' +
+                    '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
                     '</a>';
             });
         } else if (type === "bought") {
-            html = '<div class="record-section-label">📌 我购买的商品</div>';
             items.forEach(function(item) {
                 var st = statusNames[item.status] || item.status;
                 var cls = statusClass[item.status] || "";
                 html +=
                     '<a class="record-item" href="' + api.pageUrlWithReturn("product-detail.jsp?productId=" + item.id, profileReturnPath(type)) + '">' +
-                        '<div class="record-info">' +
-                            '<span class="record-title">' + api.escapeHtml(item.title) + '</span>' +
-                            '<span class="status-tag ' + cls + '">' + api.escapeHtml(st) + '</span>' +
-                            '<p class="record-meta">卖家：' + api.escapeHtml(item.sellerName || "校园同学") + ' · 价格：' + api.money(item.price) + ' 元</p>' +
-                        '</div>' +
-                        '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
+                    '<div class="record-info">' +
+                    '<span class="record-title">' + api.escapeHtml(item.title) + '</span>' +
+                    '<span class="status-tag ' + cls + '">' + api.escapeHtml(st) + '</span>' +
+                    '<p class="record-meta">卖家：' + api.escapeHtml(item.sellerName || "校园同学") + ' · 价格：' + api.money(item.price) + ' 元</p>' +
+                    '</div>' +
+                    '<span class="record-date">' + api.shortTime(item.createdAt) + '</span>' +
                     '</a>';
             });
         }
 
-        list.innerHTML = html || '<div class="empty-state"><span>📭</span><h3>暂无记录</h3></div>';
+        list.innerHTML = html || '<div class="empty-state"><h3>暂无记录</h3></div>';
         bindDeleteEvents();
     }
 
@@ -393,10 +418,10 @@
     // ===== Tab 切换 =====
     function initTabs() {
         document.querySelectorAll("[data-record-tab]").forEach(function(button) {
-            button.classList.toggle("sort-pill--active", button.dataset.recordTab === currentTab);
+            button.classList.toggle("profile-tab--active", button.dataset.recordTab === currentTab);
             button.addEventListener("click", function() {
-                document.querySelectorAll("[data-record-tab]").forEach(function(b) { b.classList.remove("sort-pill--active"); });
-                this.classList.add("sort-pill--active");
+                document.querySelectorAll("[data-record-tab]").forEach(function(b) { b.classList.remove("profile-tab--active"); });
+                this.classList.add("profile-tab--active");
                 currentTab = this.dataset.recordTab;
                 var nextUrl = new URL(location.href);
                 nextUrl.searchParams.set("recordTab", currentTab);

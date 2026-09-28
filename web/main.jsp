@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/functional.css">
+    <link rel="stylesheet" href="css/main.css?v=20260909-1733">
+    <link rel="stylesheet" href="css/functional.css?v=20260909-todos">
     <title>CTCP · 发现首页</title>
 </head>
 <body class="app-page app-page--home">
@@ -45,7 +45,7 @@
                 </div>
             </section>
 
-            <aside class="todo-panel" aria-label="进行中的二手交易">
+            <aside class="todo-panel" aria-label="进行中的二手交易与跑腿待办">
                 <div class="todo-panel__head">
                     <div>
                         <span class="discovery-eyebrow">MY TRADES</span>
@@ -53,7 +53,7 @@
                     </div>
                     <span class="todo-count" data-todo-count>0</span>
                 </div>
-                <p class="todo-panel__intro">买家与卖家都可以从这里快速返回正在进行的交易。</p>
+                <p class="todo-panel__intro">需要你处理的事项排在前面，身份和当前进度一眼可见。</p>
                 <div class="todo-list" data-todos>
                     <div class="loading-state loading-state--compact"><span class="button-spinner"></span><p>正在整理待办...</p></div>
                 </div>
@@ -65,8 +65,8 @@
         </section>
     </main>
 </div>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
 <script src="js/domain.js"></script>
-<script src="js/home.js"></script>
+<script src="js/home.js?v=20260909-todos"></script>
 </body>
 </html>

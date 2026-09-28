@@ -6,6 +6,7 @@ import com.campus.errand.dto.UserUpdateDTO;
 import com.campus.errand.exception.BizException;
 import com.campus.errand.pojo.User;
 import com.campus.errand.util.PasswordUtil;
+import com.campus.errand.util.PhoneValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -57,6 +58,7 @@ public class UserService {
         if (username == null || username.trim().isEmpty()) {
             throw new BizException(400, "昵称不能为空");
         }
+        PhoneValidator.validate(dto.getPhone());
         if (userDAO.existsByAccount(account)) {
             throw new BizException(409, "账号已存在");
         }
@@ -106,6 +108,7 @@ public class UserService {
             throw new BizException(400, "没有需要修改的内容");
         }
 
+        PhoneValidator.validate(dto.getPhone());
         if (hasOld) {
             if (!PasswordUtil.verify(dto.getOldPassword(), current.getPasswordHash())) {
                 throw new BizException(401, "旧密码不正确");

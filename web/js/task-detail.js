@@ -23,17 +23,8 @@
     var task = null;
     var currentUser = null;
     var terminationComposerOpen = false;
-
-    // ===== 图片渲染函数（平铺） =====
-    function renderImages(imageUrls) {
-        if (!imageUrls) return '';
-        var urls = imageUrls.split(',').filter(function(u) { return u && u.trim(); });
-        if (urls.length === 0) return '';
-        var items = urls.map(function(url) {
-            return '<div class="detail-image-item"><img src="' + api.escapeHtml(url.trim()) + '" alt="任务图片"></div>';
-        }).join('');
-        return '<div class="detail-image-grid">' + items + '</div>';
-    }
+    var gallery = null;
+    var comments = null;
 
     // ===== 来源返回 =====
     function resolveReturnContext() {
@@ -53,14 +44,25 @@
     }
 
     var returnContext = resolveReturnContext();
-    var headerBackLink = document.querySelector("[data-detail-back]");
-    if (headerBackLink) {
-        headerBackLink.href = returnContext.url;
-        headerBackLink.textContent = "← " + returnContext.label;
-    }
 
     function returnLink() {
         return '<a class="secondary-action" data-detail-back href="' + api.escapeHtml(returnContext.url) + '">' + api.escapeHtml(returnContext.label) + '</a>';
+    }
+
+    // 将返回按钮渲染到右上角容器
+    function renderReturnButton() {
+        var container = document.querySelector("[data-detail-back-container]");
+        if (container) {
+            container.innerHTML = returnLink();
+        }
+    }
+
+    // ===== 隐藏「发布任务」按钮 =====
+    function hidePublishButton() {
+        var publishBtn = document.querySelector(".workspace__actions .market-publish-button");
+        if (publishBtn) {
+            publishBtn.style.display = "none";
+        }
     }
 
     // ===== 待处理终止申请 =====
@@ -143,54 +145,59 @@
 
     // ===== 渲染 =====
     function render() {
-        var statusText = statusNames[task.status] || task.status;
-        var cls = statusClass[task.status] || "availability-badge";
+        var isRejected = task.auditStatus === "rejected";
+        var statusText = isRejected ? "已驳回" : (statusNames[task.status] || task.status);
+        var cls = isRejected ? "availability-badge ongoing" : (statusClass[task.status] || "availability-badge");
         var isOwner = currentUser && Number(currentUser.id) === Number(task.publisherId);
         var isAccepter = currentUser && task.accepterId && Number(currentUser.id) === Number(task.accepterId);
         var isParticipant = isOwner || isAccepter;
 
         var actionBtn = "", deleteBtn = "", terminationArea = "", terminationEntry = "", footNote = "";
-        var pending = pendingTermination();
+        var pending = isParticipant ? pendingTermination() : null;
+        var editBtn = isOwner && task.status === "open" && !isRejected
+            ? '<a class="secondary-action detail-edit-action" href="' + api.escapeHtml(api.pageUrlWithReturn("task-publish.jsp?taskId=" + taskId)) + '">修改任务</a>' : "";
 
-        // 图片
-        var imageHtml = renderImages(task.imageUrls);
-        var mediaContent = imageHtml
-            ? imageHtml
-            : '<div class="detail-media detail-media--task">' +
-                '<span class="detail-media__label">跑腿任务</span>' +
-                '<span class="detail-media__emoji">📦</span>' +
-                '<span class="detail-media__spark detail-media__spark--one">✦</span>' +
-                '<span class="detail-media__spark detail-media__spark--two">✧</span>' +
-                '<span class="detail-media__circle detail-media__circle--one"></span>' +
-                '<span class="detail-media__circle detail-media__circle--two"></span>' +
-              '</div>';
+        var rejectBanner = isRejected
+            ? '<section class="termination-request-banner termination-request-banner--review">' +
+              '<div class="termination-request-banner__head">' +
+              '<span>!</span>' +
+              '<div><strong>任务未通过审核</strong><small>请修改后重新提交</small></div>' +
+              '</div>' +
+              '<p class="termination-request-reason"><span>驳回理由</span>' + api.escapeHtml(task.auditRemark || "未填写") + '</p>' +
+              '<div class="termination-request-actions">' +
+              '<a class="primary-action" href="' + api.escapeHtml(api.pageUrlWithReturn("task-publish.jsp?taskId=" + taskId)) + '">修改后重新提交 →</a>' +
+              '</div>' +
+              '</section>' : "";
 
         if (isOwner && (task.status === "open" || task.status === "completed")) {
             deleteBtn = '<button class="secondary-action danger-action" type="button" data-action="delete-task">🗑️ 删除任务</button>';
         }
 
-        if (pending) {
-            var isReq = pending.requesterId === currentUser.id;
-            var name = pending.requesterId === task.publisherId ? "发布者" : "接取者";
+        if (isRejected) {
+            actionBtn = "";
+            footNote = "";
+        } else if (pending) {
+            var isReq = Number(pending.requesterId) === Number(currentUser.id);
+            var name = Number(pending.requesterId) === Number(task.publisherId) ? "发布者" : "接取者";
             terminationArea =
                 '<section class="termination-request-banner termination-request-banner--' + (isReq ? "waiting" : "review") + '">' +
-                    '<div class="termination-request-banner__head">' +
-                        '<span>' + (isReq ? "⌛" : "!") + '</span>' +
-                        '<div><strong>' + (isReq ? "终止申请已发出" : name + "申请终止") + '</strong>' +
-                        '<small>' + (isReq ? "等待对方处理" : "同意后任务将回到待接取") + '</small></div>' +
-                    '</div>' +
-                    '<p class="termination-request-reason"><span>申请理由</span>' + api.escapeHtml(pending.reason || "未填写") + '</p>' +
-                    '<div class="termination-request-actions">' +
-                        (isReq
-                            ? '<button class="secondary-action danger-action" data-termination-action="withdraw">撤回</button>'
-                            : '<button class="primary-action termination-approve" data-termination-action="approve">同意终止 ✓</button>' +
-                              '<button class="secondary-action" data-termination-action="reject">拒绝</button>') +
-                    '</div>' +
+                '<div class="termination-request-banner__head">' +
+                '<span>' + (isReq ? "⌛" : "!") + '</span>' +
+                '<div><strong>' + (isReq ? "终止申请已发出" : name + "申请终止") + '</strong>' +
+                '<small>' + (isReq ? "等待对方处理" : "同意后任务将回到待接取") + '</small></div>' +
+                '</div>' +
+                '<p class="termination-request-reason"><span>申请理由</span>' + api.escapeHtml(pending.reason || "未填写") + '</p>' +
+                '<div class="termination-request-actions">' +
+                (isReq
+                    ? '<button class="secondary-action danger-action" data-termination-action="withdraw">撤回</button>'
+                    : '<button class="primary-action termination-approve" data-termination-action="approve">同意终止 ✓</button>' +
+                    '<button class="secondary-action" data-termination-action="reject">拒绝</button>') +
+                '</div>' +
                 '</section>';
             footNote = "💡 待处理终止申请期间，送达和确认操作已暂停";
         } else if (task.status === "open" && currentUser && !isOwner) {
             actionBtn = '<button class="primary-action" data-action="accept">🤝 接取任务</button>';
-        } else if (task.status === "accepted" && currentUser && !isOwner) {
+        } else if (task.status === "accepted" && isAccepter) {
             actionBtn = '<button class="primary-action" style="background:#faad14;" data-action="deliver">🚚 标记送达</button>';
         } else if (task.status === "delivered" && currentUser && isOwner) {
             actionBtn = '<button class="primary-action" style="background:#52c41a;" data-action="complete">✅ 确认完成</button>';
@@ -209,66 +216,77 @@
         if ((task.status === "accepted" || task.status === "delivered") && isParticipant && !pending) {
             terminationEntry =
                 '<div class="termination-entry">' +
-                    '<button class="secondary-action danger-action" data-termination-action="open">申请终止</button>' +
-                    '<p>提交申请后需对方同意才会生效。</p>' +
+                '<button class="secondary-action danger-action" data-termination-action="open">申请终止</button>' +
+                '<p>提交申请后需对方同意才会生效。</p>' +
                 '</div>';
         }
 
         var composer = terminationComposerOpen ?
             '<section class="termination-composer">' +
-                '<div class="termination-composer__heading">' +
-                    '<div><strong>申请终止</strong><small>需对方同意才会生效</small></div>' +
-                    '<button data-termination-action="close">×</button>' +
-                '</div>' +
-                '<label>终止原因 <span>2～200 字</span></label>' +
-                '<textarea data-termination-reason maxlength="200" placeholder="例如：时间无法协调"></textarea>' +
-                '<p class="form-feedback" data-termination-feedback></p>' +
-                '<div class="termination-composer__actions">' +
-                    '<button class="secondary-action" data-termination-action="close">取消</button>' +
-                    '<button class="primary-action" data-termination-action="submit">提交 →</button>' +
-                '</div>' +
+            '<div class="termination-composer__heading">' +
+            '<div><strong>申请终止</strong><small>需对方同意才会生效</small></div>' +
+            '<button data-termination-action="close">×</button>' +
+            '</div>' +
+            '<label>终止原因 <span>2～200 字</span></label>' +
+            '<textarea data-termination-reason maxlength="200" placeholder="例如：时间无法协调"></textarea>' +
+            '<p class="form-feedback" data-termination-feedback></p>' +
+            '<div class="termination-composer__actions">' +
+            '<button class="secondary-action" data-termination-action="close">取消</button>' +
+            '<button class="primary-action" data-termination-action="submit">提交 →</button>' +
+            '</div>' +
             '</section>' : "";
 
         root.innerHTML =
             '<div class="detail-media-column">' +
-                mediaContent +
-                '<div class="detail-note">' +
-                    '<span class="detail-note__icon">☼</span>' +
-                    '<p><strong>校园互助</strong><br><span>接取后请及时联系发布者</span></p>' +
-                '</div>' +
+            '<div data-detail-gallery></div>' +
+            '<div class="detail-note">' +
+            '<span class="detail-note__icon">☼</span>' +
+            '<p><strong>校园互助</strong><br><span>接取后请及时联系发布者</span></p>' +
             '</div>' +
+            '</div>' +
+            '<div class="detail-content-column" tabindex="0" role="region" aria-label="任务信息与评论，可滚动">' +
             '<article class="detail-panel">' +
-                '<div class="detail-status-row">' +
-                    '<span class="detail-tag detail-tag--category">跑腿</span>' +
-                    '<span class="' + cls + '">● ' + statusText + '</span>' +
-                '</div>' +
-                '<h2>' + api.escapeHtml(task.title) + '</h2>' +
-                '<p class="detail-subtitle">发布者：' + api.escapeHtml(task.publisherName || "校园同学") + ' · ' + api.shortTime(task.createdAt) + '</p>' +
-                '<div class="detail-price"><small>￥</small><strong>' + api.money(task.amount) + '</strong><span>跑腿费 · 仅作信息记录</span></div>' +
-                '<div class="detail-divider"></div>' +
-                '<dl class="detail-facts">' +
-                    '<div><dt>📍 取件</dt><dd>' + api.escapeHtml(task.pickup || "待定") + '</dd></div>' +
-                    '<div><dt>📍 送达</dt><dd>' + api.escapeHtml(task.delivery || "待定") + '</dd></div>' +
-                    '<div><dt>⏰ 截止</dt><dd>' + (task.deadline ? api.shortTime(task.deadline) : "无") + '</dd></div>' +
-                    '<div><dt>💰 金额</dt><dd style="color:#f5222d;">' + api.money(task.amount) + ' 元</dd></div>' +
-                    '<div><dt>📞 联系方式</dt><dd>' + api.escapeHtml(task.contact || "未填写") + '</dd></div>' +
-                '</dl>' +
-                '<div class="detail-description">' +
-                    '<h3>📝 任务说明</h3>' +
-                    '<p>' + api.escapeHtml(task.description || "暂无") + '</p>' +
-                '</div>' +
-                terminationArea +
-                '<div class="detail-actions">' +
-                    actionBtn +
-                    deleteBtn +
-                    returnLink() +
-                '</div>' +
-                terminationEntry +
-                composer +
-                (footNote ? '<p class="detail-footnote">' + footNote + '</p>' : "") +
-            '</article>';
+            '<div class="detail-status-row">' +
+            '<span class="detail-tag detail-tag--category">跑腿</span>' +
+            '<span class="' + cls + '">● ' + statusText + '</span>' +
+            '</div>' +
+            rejectBanner +
+            '<h2>' + api.escapeHtml(task.title) + '</h2>' +
+            '<p class="detail-subtitle">发布者：' + api.escapeHtml(task.publisherName || "校园同学") + ' · ' + api.shortTime(task.createdAt) + '</p>' +
+            '<div class="detail-price"><small>￥</small><strong>' + api.money(task.amount) + '</strong><span>跑腿费 · 仅作信息记录</span></div>' +
+            '<div class="detail-divider"></div>' +
+            '<dl class="detail-facts">' +
+            '<div><dt>📍 取件</dt><dd>' + api.escapeHtml(task.pickup || "待定") + '</dd></div>' +
+            '<div><dt>📍 送达</dt><dd>' + api.escapeHtml(task.delivery || "待定") + '</dd></div>' +
+            '<div><dt>⏰ 截止</dt><dd>' + (task.deadline ? api.shortTime(task.deadline) : "无") + '</dd></div>' +
+            '<div><dt>💰 金额</dt><dd style="color:#f5222d;">' + api.money(task.amount) + ' 元</dd></div>' +
+            '<div><dt>📞 联系方式</dt><dd>' + api.escapeHtml(task.contact || "未填写") + '</dd></div>' +
+            '</dl>' +
+            '<div class="detail-description">' +
+            '<h3>📝 任务说明</h3>' +
+            '<p>' + api.escapeHtml(task.description || "暂无") + '</p>' +
+            '</div>' +
+            terminationArea +
+            '<div class="detail-actions">' +
+            actionBtn +
+            editBtn +
+            deleteBtn +
+            '</div>' +
+            terminationEntry +
+            composer +
+            (footNote ? '<p class="detail-footnote">' + footNote + '</p>' : "") +
+            '</article><section data-detail-comments></section></div>';
 
-        // 事件绑定
+        if (!gallery) gallery = new window.ListingGallery(root.querySelector("[data-detail-gallery]"), {
+            images: task.imageUrls, label: "任务图片", emptyIcon: "📦", emptyLabel: "校园跑腿"
+        });
+        else { root.querySelector("[data-detail-gallery]").replaceWith(gallery.element); gallery.setImages(task.imageUrls); }
+        if (!comments) comments = new window.ListingComments(root.querySelector("[data-detail-comments]"), {kind: "task", id: taskId, user: currentUser});
+        else root.querySelector("[data-detail-comments]").replaceWith(comments.element);
+
+        renderReturnButton();
+        hidePublishButton();
+
         ["accept", "deliver", "complete"].forEach(function(action) {
             var btn = root.querySelector("[data-action='" + action + "']");
             if (btn) {
@@ -320,21 +338,44 @@
         } catch (e) { api.toast(e.message || "操作失败", "error"); api.setLoading(btn, false); }
     }
 
+    async function resolveAccepter() {
+        if (!currentUser || Number(currentUser.id) === Number(task.publisherId) || task.accepterId
+            || (task.status !== "accepted" && task.status !== "delivered")) return;
+        var page = 1;
+        while (true) {
+            var result = await api.request("/me/tasks" + api.query({type: "accepted", page: page, size: 50}));
+            var list = result.list || [];
+            if (list.some(function(item) { return Number(item.id) === taskId && item.orderStatus !== "cancelled"; })) {
+                task.accepterId = currentUser.id;
+                return;
+            }
+            if (list.length < 50 || page * 50 >= Number(result.total || 0)) return;
+            page += 1;
+        }
+    }
+
     async function load() {
         if (!Number.isInteger(taskId) || taskId < 1) {
-            root.innerHTML = '<div class="empty-state"><h3>任务编号无效</h3>' + returnLink() + '</div>';
+            root.innerHTML = '<div class="empty-state"><h3>任务编号无效</h3></div>';
+            renderReturnButton();
+            hidePublishButton();
             return;
         }
         try {
             var results = await Promise.all([
-                api.request("/public/tasks/" + taskId),
+                api.request("/public/tasks/" + taskId).catch(function() {
+                    return api.request("/me/tasks/" + taskId);
+                }),
                 api.currentUser().catch(function() { return null; })
             ]);
             task = results[0];
             currentUser = results[1];
+            await resolveAccepter().catch(function() { api.toast("接取记录暂时无法读取，请刷新后重试", "error"); });
             render();
         } catch (e) {
-            root.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(e.message) + '</p>' + returnLink() + '</div>';
+            root.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(e.message) + '</p></div>';
+            renderReturnButton();
+            hidePublishButton();
         }
     }
 

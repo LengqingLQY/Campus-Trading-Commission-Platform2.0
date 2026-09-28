@@ -10,6 +10,7 @@ import com.campus.errand.pojo.Product;
 import com.campus.errand.pojo.Task;
 import com.campus.errand.pojo.User;
 import com.campus.errand.util.PasswordUtil;
+import com.campus.errand.util.PhoneValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -67,6 +68,14 @@ public class AdminService {
     }
 
     public void deleteTask(int id, int adminId) {
+        Task task = taskDAO.findById(id);
+        if (task == null || (task.getIsDeleted() != null && task.getIsDeleted() == 1)) {
+            throw new BizException(404, "任务不存在或已删除");
+        }
+        // 前端联动清单 §3.3：管理员只能删除状态为「已完成」的任务
+        if (!"completed".equals(task.getStatus())) {
+            throw new BizException(400, "只能删除状态为「已完成」的任务");
+        }
         if (taskDAO.softDeleteByAdmin(id, adminId) == 0) {
             throw new BizException(404, "任务不存在或已删除");
         }
@@ -113,6 +122,7 @@ public class AdminService {
         if (username == null || username.trim().isEmpty()) {
             throw new BizException(400, "昵称不能为空");
         }
+        PhoneValidator.validate(phone == null ? null : phone.trim());
         userDAO.updateProfile(id,
                 username.trim(),
                 qq == null ? "" : qq.trim(),

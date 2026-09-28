@@ -9,6 +9,7 @@ import com.campus.errand.exception.BizException;
 import com.campus.errand.pojo.Task;
 import com.campus.errand.pojo.TaskOrder;
 import com.campus.errand.pojo.TaskTerminationRequest;
+import com.campus.errand.pojo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,19 +61,56 @@ public class TaskService {
     }
 
     /**
-     * 任务详情。发布者本人额外返回 auditStatus/auditRemark，其他请求者不返回审核字段。
+     * 任务详情（契约 §7.2；前端联动清单 §3.2.2 / §3.4）。
+     * 审核通过且未完成的任务所有人可见；已完成任务仅发布者、接取者或管理员可见；
+     * 待审核/已驳回的任务仅发布者本人或管理员可见（含审核字段）。
      * 附带待处理终止申请（若有），供详情页展示终止横幅。
      */
-    public Task getTask(int id, Integer currentUserId) {
-        Task task = taskDAO.findPublicDetail(id);
+    public Task getTask(int id, User user) {
+        Task task = taskDAO.findFullById(id);
         if (task == null) {
-            throw new BizException(404, "任务不存在");
+            throw new BizException(404, "任务不存在或已删除");
         }
-        if (currentUserId == null || !currentUserId.equals(task.getPublisherId())) {
-            task.setAuditStatus(null);
-            task.setAuditRemark(null);
+        Integer currentUserId = user == null ? null : user.getId();
+        boolean isAdmin = user != null && "admin".equals(user.getRole());
+        boolean isOwner = currentUserId != null && currentUserId.equals(task.getPublisherId());
+        boolean isAccepter = false;
+        if (currentUserId != null && !isOwner && "completed".equals(task.getStatus())) {
+            TaskOrder order = taskOrderDAO.findByTaskId(id);
+            isAccepter = order != null && currentUserId.equals(order.getAccepterId());
+        }
+
+        if ("completed".equals(task.getStatus()) && !isOwner && !isAccepter && !isAdmin) {
+            throw new BizException(404, "任务不存在或已删除");
+        }
+
+        if ("approved".equals(task.getAuditStatus())) {
+            // 审核通过：所有人可见，但审核字段仅返回给发布者/管理员
+            if (!isOwner && !isAdmin) {
+                task.setAuditStatus(null);
+                task.setAuditRemark(null);
+            }
+        } else if (!isOwner && !isAdmin) {
+            // 待审核/已驳回：仅发布者或管理员可见
+            throw new BizException(404, "任务不存在或已删除");
         }
         task.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(id));
+        return task;
+    }
+
+    /**
+     * 读取本人发布的单个任务（含审核字段），用于被驳回后查看详情与跳转修改
+     * （前端联动清单 §3.2.1）。仅发布者本人可访问，非发布者返回 403。
+     */
+    public Task myTask(int userId, int taskId) {
+        Task task = taskDAO.findFullById(taskId);
+        if (task == null) {
+            throw new BizException(404, "任务不存在或已删除");
+        }
+        if (task.getPublisherId() == null || task.getPublisherId() != userId) {
+            throw new BizException(403, "无权限查看该任务");
+        }
+        task.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(taskId));
         return task;
     }
 
@@ -80,24 +118,9 @@ public class TaskService {
      * 发布任务。publisherId 从 session 取得，落库 audit_status='pending'、status='open'，待管理员审核后公开。
      */
     public int createTask(TaskCreateDTO dto, int publisherId) {
-        if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
-            throw new BizException(400, "标题不能为空");
-        }
-        if (dto.getPickup() == null || dto.getPickup().trim().isEmpty()) {
-            throw new BizException(400, "取件地点不能为空");
-        }
-        if (dto.getDelivery() == null || dto.getDelivery().trim().isEmpty()) {
-            throw new BizException(400, "送达地点不能为空");
-        }
-
+        validateTaskDto(dto);
         Double amount = dto.getAmount();
-        if (amount != null && amount < 0) {
-            throw new BizException(400, "金额不能为负数");
-        }
         String deadline = dto.getDeadline();
-        if (deadline != null && !deadline.isEmpty() && !isValidTime(deadline)) {
-            throw new BizException(400, "截止时间格式不正确");
-        }
 
         Task task = new Task();
         task.setPublisherId(publisherId);
@@ -213,6 +236,52 @@ public class TaskService {
             }
             throw new BizException(409, "进行中的任务不能删除，请发起终止申请");
         }
+    }
+
+    /**
+     * 读取本人原稿（增量契约：商品与跑腿详情评论及修改 §4.1）。
+     * 仅本人、未删除、状态 open 且无未取消接单时可读，返回含审核字段的原始记录。
+     */
+    public Task getTaskForEdit(int taskId, int currentUserId) {
+        return requireEditableTask(taskId, currentUserId);
+    }
+
+    /**
+     * 保存修改（增量契约 §4.2）：校验字段 → 校验本人/状态/无进行中接单 →
+     * 带条件 UPDATE 重新进入待审核。保存失败保留输入，不新建记录。
+     */
+    @Transactional
+    public Map<String, Object> updateTask(int taskId, TaskCreateDTO dto, int currentUserId) {
+        validateTaskDto(dto);
+        String title = dto.getTitle().trim();
+        if (title.isEmpty() || title.length() > 80) {
+            throw new BizException(400, "标题需为 1～80 字");
+        }
+
+        Task task = requireEditableTask(taskId, currentUserId);
+        task.setTitle(title);
+        task.setDescription(dto.getDescription() == null ? "" : dto.getDescription());
+        task.setPickup(dto.getPickup());
+        task.setDelivery(dto.getDelivery());
+        task.setDeadline(dto.getDeadline());
+        task.setAmount(dto.getAmount() == null ? 0.0 : dto.getAmount());
+        task.setContact(dto.getContact() == null ? "" : dto.getContact());
+        String imageUrls = dto.getImageUrls();
+        task.setImageUrls(imageUrls == null || imageUrls.trim().isEmpty() ? null : imageUrls.trim());
+
+        int rows = taskDAO.update(task);
+        if (rows == 0) {
+            // 并发下状态可能已变化，重新读取返回精确错误码，不误报成功
+            Task now = taskDAO.findById(taskId);
+            if (now == null || (now.getIsDeleted() != null && now.getIsDeleted() == 1)) {
+                throw new BizException(404, "任务不存在");
+            }
+            if (now.getPublisherId() != null && now.getPublisherId() != currentUserId) {
+                throw new BizException(403, "只能修改自己发布的任务");
+            }
+            throw new BizException(409, "任务状态已变化，请刷新后重试");
+        }
+        return Map.of("id", taskId, "status", "open", "auditStatus", "pending");
     }
 
     /**
@@ -362,6 +431,52 @@ public class TaskService {
                 t.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(t.getId()));
             }
         }
+    }
+
+    /** 发布/修改共用的字段校验：标题/取件/送达非空、金额有限且非负、截止时间格式合法。 */
+    private void validateTaskDto(TaskCreateDTO dto) {
+        if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
+            throw new BizException(400, "标题不能为空");
+        }
+        if (dto.getPickup() == null || dto.getPickup().trim().isEmpty()) {
+            throw new BizException(400, "取件地点不能为空");
+        }
+        if (dto.getDelivery() == null || dto.getDelivery().trim().isEmpty()) {
+            throw new BizException(400, "送达地点不能为空");
+        }
+        Double amount = dto.getAmount();
+        if (amount != null && !Double.isFinite(amount)) {
+            throw new BizException(400, "金额必须是有限数值");
+        }
+        if (amount != null && amount < 0) {
+            throw new BizException(400, "金额不能为负数");
+        }
+        if (amount != null && amount > 100000) {
+            throw new BizException(400, "跑腿金额不能超过 100,000 元");
+        }
+        String deadline = dto.getDeadline();
+        if (deadline != null && !deadline.isEmpty() && !isValidTime(deadline)) {
+            throw new BizException(400, "截止时间格式不正确");
+        }
+    }
+
+    /** 编辑/修改共用的归属与状态校验，通过则返回原记录。 */
+    private Task requireEditableTask(int taskId, int currentUserId) {
+        Task task = taskDAO.findById(taskId);
+        if (task == null || (task.getIsDeleted() != null && task.getIsDeleted() == 1)) {
+            throw new BizException(404, "任务不存在");
+        }
+        if (task.getPublisherId() == null || task.getPublisherId() != currentUserId) {
+            throw new BizException(403, "只能修改自己发布的任务");
+        }
+        if (!"open".equals(task.getStatus())) {
+            throw new BizException(409, "当前状态不允许修改");
+        }
+        TaskOrder order = taskOrderDAO.findByTaskId(taskId);
+        if (order != null && !"cancelled".equals(order.getStatus())) {
+            throw new BizException(409, "任务存在进行中的接单，不能修改");
+        }
+        return task;
     }
 
     private static boolean isValidTime(String s) {

@@ -13,17 +13,8 @@
     let product = null;
     let currentUser = null;
     let orderLink = null;
-
-    // ===== 图片渲染函数（平铺） =====
-    function renderImages(imageUrls) {
-        if (!imageUrls) return "";
-        const urls = imageUrls.split(",").filter((u) => u && u.trim());
-        if (urls.length === 0) return "";
-        const items = urls.map((url) =>
-            `<div class="detail-image-item"><img src="${api.escapeHtml(url.trim())}" alt="商品图片"></div>`
-        ).join("");
-        return `<div class="detail-image-grid">${items}</div>`;
-    }
+    let gallery = null;
+    let comments = null;
 
     function resolveReturnContext() {
         const requested = searchParams.get("returnTo") || document.referrer || "";
@@ -44,11 +35,6 @@
     }
 
     const returnContext = resolveReturnContext();
-    const headerBackLink = document.querySelector("[data-detail-back]");
-    if (headerBackLink) {
-        headerBackLink.href = returnContext.url;
-        headerBackLink.textContent = `← ${returnContext.label}`;
-    }
 
     function canUseBrowserBack() {
         if (!document.referrer || history.length < 2) return false;
@@ -99,6 +85,8 @@
         const sold = product.status !== "on_sale";
         let action;
         let ownerDeleteAction = "";
+        const editAction = own && product.status === "on_sale"
+            ? `<a class="secondary-action detail-edit-action" href="${api.escapeHtml(api.pageUrlWithReturn(`product-publish.jsp?productId=${productId}`))}">修改商品</a>` : "";
         if (orderLink) {
             action = `<a class="primary-action" href="${api.pageUrl(`product-order.jsp?orderId=${orderLink.orderId}&role=${orderLink.role}`)}"><span>进入交易页面</span><span>→</span></a>`;
         } else if (sold) {
@@ -118,29 +106,19 @@
                 : `<button class="secondary-action danger-action" type="button" data-action="delete">删除商品</button>`;
         }
 
-        const imageHtml = renderImages(product.imageUrls);
-        const mediaContent = imageHtml || `
-                <div class="detail-media detail-media--book">
-                    <span class="detail-media__label">${api.escapeHtml(category)}</span>
-                    <span class="detail-media__emoji" aria-hidden="true">${categoryEmoji[product.category] || "✨"}</span>
-                    <span class="detail-media__spark detail-media__spark--one" aria-hidden="true">✦</span>
-                    <span class="detail-media__spark detail-media__spark--two" aria-hidden="true">✧</span>
-                    <span class="detail-media__circle detail-media__circle--one" aria-hidden="true"></span>
-                    <span class="detail-media__circle detail-media__circle--two" aria-hidden="true"></span>
-                </div>`;
-
         root.innerHTML = `
             <div class="detail-media-column">
-                ${mediaContent}
+                <div data-detail-gallery></div>
                 <div class="detail-note"><span class="detail-note__icon">☼</span><p><strong>校园友好交易</strong><br><span>建议在公共区域当面交接</span></p></div>
             </div>
+            <div class="detail-content-column" tabindex="0" role="region" aria-label="商品信息与评论，可滚动">
             <article class="detail-panel">
                 <div class="detail-status-row">
                     <span class="detail-tag detail-tag--category">${api.escapeHtml(category)}</span>
                     <span class="availability-badge${sold ? " availability-badge--sold" : ""}">${sold ? "已售出" : "在售"}</span>
                 </div>
                 <h2>${api.escapeHtml(product.title)}</h2>
-                <p class="detail-subtitle">${api.escapeHtml(product.description || "一件正在等待新主人的校园好物")}</p>
+                <p class="detail-subtitle">校园好物，期待遇见下一位主人</p>
                 <div class="detail-price"><small>￥</small><strong>${api.money(product.price)}</strong><span>价格仅作信息记录</span></div>
                 <div class="detail-divider"></div>
                 <dl class="detail-facts">
@@ -151,9 +129,18 @@
                     <div><dt>卖家</dt><dd class="seller-detail"><span class="avatar avatar--tiny">${api.initial(product.sellerName)}</span>${api.escapeHtml(product.sellerName || "校园同学")}</dd></div>
                 </dl>
                 <div class="detail-description"><h3>商品描述</h3><p>${api.escapeHtml(product.description || "卖家暂未补充更多描述。")}</p></div>
-                <div class="detail-actions">${action}${ownerDeleteAction}${returnLink()}</div>
+                <div class="detail-actions">${action}${editAction}${ownerDeleteAction}${returnLink()}</div>
                 <p class="detail-footnote">购买会生成交易记录；之后由买卖双方联系并在线下完成交接，平台不接入真实支付。</p>
-            </article>`;
+            </article>
+            <section data-detail-comments></section>
+            </div>`;
+
+        if (!gallery) gallery = new window.ListingGallery(root.querySelector("[data-detail-gallery]"), {
+            images: product.imageUrls, label: "商品图片", emptyIcon: categoryEmoji[product.category] || "✨", emptyLabel: category
+        });
+        else { root.querySelector("[data-detail-gallery]").replaceWith(gallery.element); gallery.setImages(product.imageUrls); }
+        if (!comments) comments = new window.ListingComments(root.querySelector("[data-detail-comments]"), {kind: "product", id: productId, user: currentUser});
+        else root.querySelector("[data-detail-comments]").replaceWith(comments.element);
 
         const buyButton = root.querySelector("[data-action='buy']");
         if (buyButton) buyButton.addEventListener("click", buy);

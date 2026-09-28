@@ -26,6 +26,9 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        // 这些接口的响应依赖当前 Session，禁止浏览器或中间缓存跨账号复用。
+        response.setHeader("Cache-Control", "no-store");
+
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
 

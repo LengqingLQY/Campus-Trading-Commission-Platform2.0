@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/auth.css">
-    <link rel="stylesheet" href="css/functional.css">
+    <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
     <title>CTCP · 注册</title>
 </head>
 <body class="auth-page auth-page--register">
@@ -109,7 +109,7 @@
     <span>CTCP · Campus Together</span>
     <span>校园协作，从一份好心情开始</span>
 </footer>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
 <script src="js/auth.js"></script>
 </body>
 </html>

@@ -174,8 +174,59 @@
 }
 
 .sidebar__nav ul {
+    position: relative;
+    z-index: 1;
     display: grid;
     gap: 5px;
+}
+
+.sidebar__nav-highlight {
+    --highlight-x: 0px;
+    --highlight-y: 0px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.08));
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 14px;
+    box-shadow: 0 9px 20px rgba(0, 77, 75, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transform: translate3d(var(--highlight-x), var(--highlight-y), 0);
+    transition: opacity 0.18s ease, transform 0.36s cubic-bezier(0.22, 0.8, 0.24, 1), width 0.28s ease, height 0.28s ease;
+}
+
+.sidebar__nav-highlight::before {
+    position: absolute;
+    top: 9px;
+    bottom: 9px;
+    left: -1px;
+    width: 3px;
+    background: linear-gradient(180deg, #ffe58f, var(--yellow));
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 12px rgba(255, 214, 109, 0.44);
+    content: "";
+}
+
+.sidebar__nav-highlight::after {
+    position: absolute;
+    top: 8px;
+    right: 17px;
+    width: 26px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.34);
+    content: "";
+}
+
+.sidebar__nav-highlight--instant {
+    transition: none !important;
+}
+
+.sidebar__nav-highlight--visible {
+    opacity: 1;
 }
 
 .nav-link {
@@ -219,7 +270,40 @@
     transform: translateX(2px);
 }
 
+.sidebar__nav--enhanced .nav-link:hover,
+.sidebar__nav--enhanced .nav-link--active,
+.app-page--home .sidebar__nav--enhanced .nav-link--home,
+.app-page--task .sidebar__nav--enhanced .nav-link--task,
+.app-page--secondhand .sidebar__nav--enhanced .nav-link--secondhand,
+.app-page--profile .sidebar__nav--enhanced .nav-link--profile,
+.app-page--admin .sidebar__nav--enhanced .nav-link--admin {
+    background: transparent;
+    border-color: transparent;
+    transform: none;
+}
+
+.sidebar__nav--enhanced .nav-link--active,
+.app-page--home .sidebar__nav--enhanced .nav-link--home,
+.app-page--task .sidebar__nav--enhanced .nav-link--task,
+.app-page--secondhand .sidebar__nav--enhanced .nav-link--secondhand,
+.app-page--profile .sidebar__nav--enhanced .nav-link--profile,
+.app-page--admin .sidebar__nav--enhanced .nav-link--admin {
+    box-shadow: none;
+}
+
+.sidebar__nav--enhanced .nav-link[data-nav-page]::before,
+.sidebar__nav--enhanced .nav-link[data-nav-page]:hover::before {
+    opacity: 0;
+    transform: scaleY(0.45);
+}
+
+.sidebar__nav--enhanced .nav-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.72);
+    outline-offset: 2px;
+}
+
 .nav-link--active,
+.app-page--home .nav-link--home,
 .app-page--task .nav-link--task,
 .app-page--secondhand .nav-link--secondhand,
 .app-page--profile .nav-link--profile,
@@ -229,6 +313,7 @@
 
 .nav-link:hover::before,
 .nav-link--active::before,
+.app-page--home .nav-link--home::before,
 .app-page--task .nav-link--task::before,
 .app-page--secondhand .nav-link--secondhand::before,
 .app-page--profile .nav-link--profile::before,

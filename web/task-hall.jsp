@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/secondhand.css">
-    <link rel="stylesheet" href="css/functional.css">
+    <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
     <title>CTCP · 跑腿任务</title>
 </head>
 <body class="app-page app-page--task">
@@ -32,7 +32,7 @@
                     <span class="banner-label">校园跑腿 · CAMPUS ERRAND</span>
                     <h2>需要帮忙？<br><em>发布一个任务吧。</em></h2>
                     <p>取快递、带饭、占座、代买……校园里的每一件小事，都可以在这里找到愿意帮忙的同学。</p>
-                    <div class="banner-meta"><span>● 校园内互助</span><span>● 跑腿费仅作信息记录</span></div>
+                    <div class="banner-meta"><span>顺路搭把手</span><span>小事有人帮</span></div>
                 </div>
                 <div class="banner-art" aria-hidden="true">
                     <div class="art-ring art-ring--large"></div><div class="art-ring art-ring--small"></div>
@@ -61,7 +61,6 @@
                 <button class="category-chip" type="button" data-status="open">待接取</button>
                 <button class="category-chip" type="button" data-status="accepted">已接取</button>
                 <button class="category-chip" type="button" data-status="delivered">已送达</button>
-                <button class="category-chip" type="button" data-status="completed">已完成</button>
             </div>
 
             <div class="listing-head">
@@ -75,7 +74,7 @@
         </section>
     </main>
 </div>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
 <script src="js/task.js"></script>
 </body>
 </html>

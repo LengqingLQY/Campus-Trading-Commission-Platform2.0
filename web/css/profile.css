@@ -213,11 +213,198 @@
 }
 .profile-card .publish-actions .primary-action {
     flex: 0 1 150px;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+    padding: 0 10px;
 }
 .profile-card .security-hint {
     margin-top: 12px;
     color: #adb7b6;
     font-size: 10px;
+}
+
+/* ================================================================
+   🎯 管理员页面：Tab 栏 + 状态筛选 圆角按钮
+   ================================================================ */
+
+/* ----- Tab 栏（跑腿任务 / 二手商品 / 用户管理） ----- */
+.sort-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 20px;
+    border: 1px solid #e2f0ec;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6d8b8d;
+    background: #f3faf8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    -webkit-font-smoothing: antialiased;
+}
+
+.sort-pill:hover {
+    color: var(--teal-dark);
+    background: #e7f8f2;
+    border-color: rgba(24, 169, 155, 0.3);
+    transform: translateY(-1px);
+}
+
+.sort-pill--active {
+    color: #ffffff;
+    background: linear-gradient(105deg, var(--teal-dark), var(--teal));
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(24, 169, 155, 0.25);
+}
+
+.sort-pill--active:hover {
+    color: #ffffff;
+    box-shadow: 0 6px 20px rgba(24, 169, 155, 0.35);
+    transform: translateY(-1px);
+}
+
+/* ----- 状态筛选栏（待审核 / 已通过 / 已驳回 / 全部） ----- */
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 18px;
+    border: 1px solid #e8f2ef;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6d8b8d;
+    background: #f7fcfa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    -webkit-font-smoothing: antialiased;
+}
+
+.category-chip:hover {
+    color: var(--teal-dark);
+    background: #edf8f4;
+    border-color: rgba(24, 169, 155, 0.25);
+    transform: translateY(-1px);
+}
+
+.category-chip--active {
+    color: #ffffff;
+    background: linear-gradient(105deg, var(--teal-dark), var(--teal));
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(24, 169, 155, 0.2);
+}
+
+.category-chip--active:hover {
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(24, 169, 155, 0.3);
+    transform: translateY(-1px);
+}
+
+/* ================================================================
+   👤 用户编辑模式（更干净、融入页面）
+   ================================================================ */
+
+.admin-item--editing {
+    background: #f8fbfa;
+    border: 1px solid #e2f0ec;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+}
+
+.user-edit-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 16px;
+}
+
+.user-edit-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-edit-field label {
+    min-width: 40px;
+    color: #637d80;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.user-edit-field input {
+    flex: 1;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 12px;
+    color: #4d696e;
+    background: #ffffff;
+    border: 1px solid #e2f0ec;
+    border-radius: 8px;
+    outline: 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-edit-field input:focus {
+    border-color: rgba(24, 169, 155, 0.4);
+    box-shadow: 0 0 0 3px rgba(24, 169, 155, 0.08);
+}
+
+.admin-item--editing .admin-actions {
+    align-self: center;
+}
+
+/* ===== 个人空间 Tab 圆角按钮 ===== */
+.profile-tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eff5f3;
+}
+
+.profile-tab {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #7a9297;
+    background: #f0f5f4;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.profile-tab:hover {
+    background: #e3f0ed;
+    color: #4a7a7a;
+    transform: translateY(-1px);
+}
+
+.profile-tab--active {
+    color: #ffffff;
+    background: linear-gradient(105deg, var(--teal-dark), var(--teal));
+    box-shadow: 0 4px 12px rgba(24, 169, 155, 0.25);
+}
+
+.profile-tab--active:hover {
+    color: #ffffff;
+    background: linear-gradient(105deg, var(--teal-dark), var(--teal));
+    box-shadow: 0 6px 16px rgba(24, 169, 155, 0.35);
+    transform: translateY(-1px);
+}
+
+/* ===== 修复「我的记录」标题与 Tab 按钮间距过近 ===== */
+.profile-records .section-heading {
+    margin-bottom: 16px;
 }
 
 /* ===== 记录列表 ===== */
@@ -531,6 +718,9 @@
         flex-direction: column;
         gap: 4px;
     }
+    .user-edit-form {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 520px) {
@@ -545,6 +735,16 @@
     .profile-card .publish-actions .primary-action {
         flex-basis: 100%;
         order: -1;
+        justify-content: center;
+        text-align: center;
+        white-space: nowrap;
+        padding: 0 10px;
+    }
+    .sort-pill,
+    .category-chip {
+        padding: 0 14px;
+        font-size: 11px;
+        min-height: 32px;
     }
 }
 
@@ -613,4 +813,60 @@
 
 .avatar-upload-overlay .upload-text:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+
+/* ===== 头像 + 按钮容器 ===== */
+.profile-avatar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* ===== 头像本身（调整 cursor） ===== */
+.profile-avatar-lg {
+    cursor: default;
+}
+
+/* ===== 头像按钮容器 ===== */
+.profile-avatar-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ===== 头像按钮通用样式 ===== */
+.avatar-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.avatar-btn--primary {
+    color: #ffffff;
+    background: linear-gradient(105deg, #087b74, #18a99b);
+}
+
+.avatar-btn--primary:hover {
+    opacity: 0.85;
+}
+
+.avatar-btn--secondary {
+    color: #7a9297;
+    background: #f0f5f4;
+}
+
+.avatar-btn--secondary:hover {
+    background: #e3ece8;
+    color: #4a7a7a;
+}
+
+/* ===== 移除旧的遮罩样式（不再使用） ===== */
+.avatar-upload-overlay {
+    display: none !important;
 }

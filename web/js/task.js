@@ -39,9 +39,7 @@
         return '<article class="product-card product-card--task">\n' +
             '    <a class="product-card__link" href="' + api.pageUrlWithReturn("task-detail.jsp?taskId=" + item.id) + '">\n' +
             '        <div class="' + visualClass + '" style="position:relative;overflow:hidden;">\n' +
-            '            <span class="visual-label">跑腿任务</span>\n' +
             '            ' + visualContent + '\n' +
-            '            <span class="visual-doodle visual-doodle--task" aria-hidden="true">✦</span>\n' +
             '        </div>\n' +
             '        <div class="product-info">\n' +
             '            <div class="product-tags">\n' +

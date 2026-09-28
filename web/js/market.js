@@ -13,17 +13,9 @@
     const emoji = {book: "📚", electronic: "🎧", daily: "🪴", clothing: "🧥", sports: "🏀", other: "✨"};
     const state = {keyword: "", sort: "time_desc", category: "", requestId: 0};
 
-    function getFirstImage(item) {
-        if (item.imageUrls) {
-            const urls = item.imageUrls.split(",");
-            return urls[0] || null;
-        }
-        return null;
-    }
-
     function card(item, index) {
         const sold = item.status !== "on_sale";
-        const firstImage = getFirstImage(item);
+        const firstImage = api.firstImageUrl(item.imageUrls);
         const visualContent = firstImage
             ? `<img src="${api.escapeHtml(firstImage)}" alt="商品图片" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">`
             : `<span class="product-emoji" aria-hidden="true">${emoji[item.category] || "✨"}</span>`;

@@ -37,7 +37,7 @@ public class ProductController {
      */
     @GetMapping("/public/products/{id}")
     public Result detail(@PathVariable int id, HttpSession session) {
-        return Result.ok(productService.getProduct(id, currentUserIdOrNull(session)));
+        return Result.ok(productService.getProduct(id, currentUserOrNull(session)));
     }
 
     /**
@@ -67,6 +67,22 @@ public class ProductController {
         return Result.ok(Map.of("id", id));
     }
 
+    /**
+     * GET /api/products/{id}/edit —— 发布者读取本人原稿（增量契约：商品与跑腿详情评论及修改 §4.1）。
+     */
+    @GetMapping("/products/{id}/edit")
+    public Result edit(@PathVariable int id, HttpSession session) {
+        return Result.ok(productService.getProductForEdit(id, currentUser(session).getId()));
+    }
+
+    /**
+     * PUT /api/products/{id} —— 发布者保存修改，重新进入待审核（§4.2）。
+     */
+    @PutMapping("/products/{id}")
+    public Result update(@PathVariable int id, @RequestBody ProductCreateDTO dto, HttpSession session) {
+        return Result.ok(productService.updateProduct(id, dto, currentUser(session).getId()));
+    }
+
     private User currentUser(HttpSession session) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
@@ -75,8 +91,7 @@ public class ProductController {
         return user;
     }
 
-    private Integer currentUserIdOrNull(HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        return user == null ? null : user.getId();
+    private User currentUserOrNull(HttpSession session) {
+        return (User) session.getAttribute("user");
     }
 }

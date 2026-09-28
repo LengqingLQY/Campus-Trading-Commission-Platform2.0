@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 二手商品表数据访问。
  *
- * 公开查询一律走 v_public_product 视图（已过滤 audit_status='approved' AND is_deleted=0）。
+ * 公开查询一律走 v_public_product 视图（仅保留审核通过、未删除且在售的商品）。
  */
 @Repository
 public class ProductDAO {
@@ -28,7 +28,8 @@ public class ProductDAO {
         String sql = "SELECT t.id, t.title, t.description, t.category, t.condition, t.price, "
                 + "t.image_urls, t.location, t.status, t.seller_id, t.created_at, u.username AS sellerName "
                 + "FROM v_public_product t JOIN user u ON u.id = t.seller_id "
-                + "WHERE t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\' "
+                + "WHERE t.status = 'on_sale' "
+                + "AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\') "
                 + "ORDER BY " + orderBy + " LIMIT ? OFFSET ?";
         return jdbc.query(sql, new BeanPropertyRowMapper<>(Product.class), p, p, size, offset);
     }
@@ -36,7 +37,8 @@ public class ProductDAO {
     public long countPublic(String keyword) {
         String p = likePattern(keyword);
         String sql = "SELECT COUNT(*) FROM v_public_product t "
-                + "WHERE t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\'";
+                + "WHERE t.status = 'on_sale' "
+                + "AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')";
         Long count = jdbc.queryForObject(sql, Long.class, p, p);
         return count == null ? 0 : count;
     }
@@ -45,7 +47,17 @@ public class ProductDAO {
         String sql = "SELECT t.id, t.title, t.description, t.category, t.condition, t.price, "
                 + "t.image_urls, t.location, t.contact, t.audit_status, t.audit_remark, t.status, t.seller_id, "
                 + "t.created_at, t.updated_at, u.username AS sellerName "
-                + "FROM v_public_product t JOIN user u ON u.id = t.seller_id WHERE t.id = ?";
+                + "FROM v_public_product t JOIN user u ON u.id = t.seller_id "
+                + "WHERE t.id = ? AND t.status = 'on_sale'";
+        List<Product> list = jdbc.query(sql, new BeanPropertyRowMapper<>(Product.class), id);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    /** 已售出/已完成商品的详情只在 Service 完成参与者校验后使用。 */
+    public Product findFullById(int id) {
+        String sql = "SELECT p.*, u.username AS sellerName "
+                + "FROM product p JOIN user u ON u.id = p.seller_id "
+                + "WHERE p.id = ? AND p.is_deleted = 0";
         List<Product> list = jdbc.query(sql, new BeanPropertyRowMapper<>(Product.class), id);
         return list.isEmpty() ? null : list.get(0);
     }
@@ -84,11 +96,11 @@ public class ProductDAO {
     /**
      * 购买：状态判断写入 WHERE，返回受影响行数（0 = 已售出 / 不可买）。
      */
-    public int markSold(int productId) {
+    public int markSold(int productId, int buyerId) {
         return jdbc.update(
                 "UPDATE product SET status='sold', updated_at=datetime('now','localtime') "
-              + "WHERE id=? AND status='on_sale' AND audit_status='approved' AND is_deleted=0",
-                productId);
+              + "WHERE id=? AND seller_id<>? AND status='on_sale' AND audit_status='approved' AND is_deleted=0",
+                productId, buyerId);
     }
 
     /**
@@ -110,6 +122,22 @@ public class ProductDAO {
                 "UPDATE product SET status='on_sale', updated_at=datetime('now','localtime') "
               + "WHERE id=? AND status='sold'",
                 productId);
+    }
+
+    /**
+     * 发布者保存修改：整行更新并重新进入待审核（audit_status='pending'），清理旧审核意见。
+     * WHERE 带身份 + 状态 + 软删除条件，返回受影响行数（0 = 非本人 / 已删除 / 非 on_sale，
+     * 由 Service 二次读取返回精确错误码）。
+     */
+    public int update(Product product) {
+        return jdbc.update(
+                "UPDATE product SET title=?, description=?, category=?, condition=?, price=?, "
+              + "location=?, contact=?, image_urls=?, audit_status='pending', audit_remark=NULL, "
+              + "updated_at=datetime('now','localtime') "
+              + "WHERE id=? AND seller_id=? AND is_deleted=0 AND status='on_sale'",
+                product.getTitle(), product.getDescription(), product.getCategory(), product.getCondition(),
+                product.getPrice(), product.getLocation(), product.getContact(), product.getImageUrls(),
+                product.getId(), product.getSellerId());
     }
 
     /**

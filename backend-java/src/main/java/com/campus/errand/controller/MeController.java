@@ -36,6 +36,14 @@ public class MeController {
     }
 
     /**
+     * GET /api/me/tasks/{taskId} —— 读取本人发布的单个任务（被驳回后查看详情）。
+     */
+    @GetMapping("/tasks/{taskId}")
+    public Result myTask(@PathVariable int taskId, HttpSession session) {
+        return Result.ok(taskService.myTask(currentUser(session).getId(), taskId));
+    }
+
+    /**
      * GET /api/me/products?type=published|bought —— 我的商品。
      */
     @GetMapping("/products")

@@ -23,35 +23,36 @@
         <span class="profile-status" aria-label="在线"></span>
     </div>
 
-    <nav class="sidebar__nav" aria-label="校园导航">
+    <nav class="sidebar__nav" aria-label="校园导航" data-sidebar-nav>
         <p class="nav-caption">功能导航</p>
+        <span class="sidebar__nav-highlight" data-sidebar-highlight aria-hidden="true"></span>
         <ul>
             <li>
-                <a class="nav-link nav-link--home" href="main.jsp">
+                <a class="nav-link nav-link--home" href="main.jsp" data-nav-page="home">
                     <span class="nav-icon" aria-hidden="true">⌂</span>
                     <span>发现首页</span>
                 </a>
             </li>
             <li>
-                <a class="nav-link nav-link--task" href="task-hall.jsp">
+                <a class="nav-link nav-link--task" href="task-hall.jsp" data-nav-page="task">
                     <span class="nav-icon" aria-hidden="true">↗</span>
                     <span>跑腿任务</span>
                 </a>
             </li>
             <li>
-                <a class="nav-link nav-link--secondhand" href="secondhand.jsp">
+                <a class="nav-link nav-link--secondhand" href="secondhand.jsp" data-nav-page="secondhand">
                     <span class="nav-icon" aria-hidden="true">◇</span>
                     <span>二手交易</span>
                 </a>
             </li>
             <li>
-                <a class="nav-link nav-link--profile" href="profile-user.jsp">
+                <a class="nav-link nav-link--profile" href="profile-user.jsp" data-nav-page="profile">
                     <span class="nav-icon" aria-hidden="true">☻</span>
                     <span>个人空间</span>
                 </a>
             </li>
             <li>
-                <a class="nav-link nav-link--admin" href="profile-admin.jsp" data-admin-link style="display:none;">
+                <a class="nav-link nav-link--admin" href="profile-admin.jsp" data-nav-page="admin" data-admin-link style="display:none;">
                     <span class="nav-icon" aria-hidden="true">⚙</span>
                     <span>管理员面板</span>
                 </a>
@@ -70,3 +71,4 @@
         </a>
     </div>
 </aside>
+<script src="js/sidebar.js?v=20260909-1733"></script>

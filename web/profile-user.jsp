@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/product.css">
     <link rel="stylesheet" href="css/profile.css">
-    <link rel="stylesheet" href="css/functional.css">
+    <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
     <title>个人空间 · CTCP</title>
 </head>
 <body class="app-page app-page--profile">
@@ -19,13 +19,7 @@
         <header class="workspace__topbar product-page-topbar profile-topbar">
             <div>
                 <span class="workspace__kicker">PROFILE · PERSONAL SPACE</span>
-                <h1>个人空间 <span class="profile-role user">普通用户</span></h1>
-            </div>
-            <div class="workspace__actions">
-                <button class="profile-chip" type="button">
-                    <span class="avatar avatar--small" data-profile-avatar>A</span>
-                    <span data-profile-name>我的空间</span>
-                </button>
+                <h1>个人空间</h1>
             </div>
         </header>
 
@@ -40,30 +34,24 @@
                 <!-- ===== 个人资料 ===== -->
                 <div class="profile-card">
                     <div class="section-heading">
-                        <span class="section-heading__number">👤</span>
-                        <div><h2>个人资料</h2><p>查看和修改个人信息</p></div>
+                        <span class="section-heading__number"></span>
+                        <div><h2>个人资料</h2></div>
                     </div>
 
                     <div class="profile-avatar-row">
-                        <!-- ===== 头像区域（点击上传） ===== -->
-                        <div class="profile-avatar-lg user" data-profile-avatar-lg>
-                            <span class="avatar-letter" data-avatar-letter>A</span>
-                            <div class="avatar-upload-overlay">
-                                <span class="upload-icon">📷</span>
-                                <span class="upload-text" data-action="upload-avatar">更换头像</span>
-                                <span class="upload-divider">|</span>
-                                <span class="upload-text" data-action="reset-avatar">恢复默认</span>
+                        <!-- ===== 头像 + 两个按钮 ===== -->
+                        <div class="profile-avatar-wrapper">
+                            <div class="profile-avatar-lg user" data-profile-avatar-lg>
+                                <span class="avatar-letter" data-avatar-letter>A</span>
+                            </div>
+                            <div class="profile-avatar-actions">
+                                <button class="avatar-btn avatar-btn--primary" type="button" data-action="upload-avatar">更换头像</button>
+                                <button class="avatar-btn avatar-btn--secondary" type="button" data-action="reset-avatar">恢复默认</button>
                             </div>
                         </div>
                         <input type="file" id="avatarInput" accept="image/*" style="display:none;">
                         <div>
                             <span class="profile-name" data-profile-username>加载中</span>
-                            <span class="profile-role user">普通用户</span>
-                            <p class="profile-contact">
-                                QQ：<span data-profile-qq>—</span> &nbsp;|&nbsp;
-                                微信：<span data-profile-wechat>—</span> &nbsp;|&nbsp;
-                                电话：<span data-profile-phone>—</span>
-                            </p>
                         </div>
                     </div>
 
@@ -83,10 +71,12 @@
                             </div>
                             <div class="form-field">
                                 <label for="edit-phone">电话</label>
-                                <input type="text" id="edit-phone" name="phone" data-profile-input-phone>
+                                <input type="tel" id="edit-phone" name="phone" data-profile-input-phone
+                                       maxlength="11" inputmode="numeric" pattern="[0-9]*"
+                                       placeholder="请输入11位手机号">
                             </div>
                             <fieldset class="form-field form-field--full profile-password-fieldset">
-                                <legend>重置密码 <span>需同时填写旧密码和新密码</span></legend>
+                                <legend>重置密码</legend>
                                 <div class="profile-password-grid">
                                     <div>
                                         <label for="edit-old-password">旧密码</label>
@@ -101,25 +91,24 @@
                         </div>
                         <p class="form-feedback" data-profile-feedback aria-live="polite"></p>
                         <div class="publish-actions">
-                            <button class="primary-action" type="submit" style="background:#52c41a;">💾 保存修改</button>
+                            <button class="primary-action" type="submit" style="background:#52c41a;">保存修改</button>
                             <button class="secondary-action" type="reset">取消</button>
                         </div>
-                        <p class="security-hint">🔒 密码使用哈希存储，不显示明文</p>
                     </form>
                 </div>
 
                 <!-- ===== 我的记录 ===== -->
                 <div class="profile-records" id="profile-records" data-profile-records>
                     <div class="section-heading" style="border-bottom:none;padding-bottom:0;">
-                        <span class="section-heading__number">📋</span>
-                        <div><h2>我的记录</h2><p>我发布的 · 我接取的 · 我购买的</p></div>
+                        <span class="section-heading__number"></span>
+                        <div><h2>我的记录</h2></div>
                     </div>
 
-                    <div class="market-tools" style="margin-top:16px;padding-bottom:16px;border-bottom:1px solid #eff5f3;">
-                        <button class="sort-pill sort-pill--active" type="button" data-record-tab="published-tasks">📦 我发布的任务</button>
-                        <button class="sort-pill" type="button" data-record-tab="published-products">🛍️ 我上架的商品</button>
-                        <button class="sort-pill" type="button" data-record-tab="accepted">🏃 我接取的任务</button>
-                        <button class="sort-pill" type="button" data-record-tab="bought">🛒 我购买的商品</button>
+                    <div class="profile-tab-bar">
+                        <button class="profile-tab profile-tab--active" type="button" data-record-tab="published-tasks">我发布的任务</button>
+                        <button class="profile-tab" type="button" data-record-tab="published-products">我上架的商品</button>
+                        <button class="profile-tab" type="button" data-record-tab="accepted">我接取的任务</button>
+                        <button class="profile-tab" type="button" data-record-tab="bought">我购买的商品</button>
                     </div>
 
                     <div data-record-list>
@@ -130,7 +119,7 @@
         </section>
     </main>
 </div>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
 <script src="js/profile.js"></script>
 </body>
 </html>

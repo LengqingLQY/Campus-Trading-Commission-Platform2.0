@@ -198,6 +198,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_task_pending_termination
  WHERE status = 'pending';
 
 
+-- ============================ 8. 评论表 ============================
+-- 商品与任务的评论/回复（增量契约：商品与跑腿详情评论及修改 §3）。
+-- 用 resource_type + resource_id 区分所属资源（product/task），评论逻辑对两类资源通用。
+-- 软删除而非硬删除：父评论被删时保留行、置 is_deleted=1，子回复的 reply_to_id 不悬空，
+-- 前端据此显示「原评论已删除」。
+CREATE TABLE IF NOT EXISTS comment (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    resource_type TEXT    NOT NULL CHECK (resource_type IN ('product', 'task')),
+    resource_id   INTEGER NOT NULL,
+    author_id     INTEGER NOT NULL REFERENCES user(id),
+    reply_to_id   INTEGER REFERENCES comment(id),   -- 回复的直接父评论；NULL=顶层评论
+    content       TEXT    NOT NULL,                  -- 去两端空白后 1~1000 字
+    is_deleted    INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0, 1)),
+    deleted_by    INTEGER REFERENCES user(id),
+    deleted_at    TEXT,
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- 评论列表按「资源 + 未删除」过滤后按时间正序、id 正序分页，故建复合索引
+CREATE INDEX IF NOT EXISTS idx_comment_resource
+    ON comment(resource_type, resource_id, is_deleted, created_at, id);
+
+
 -- ============================ 索引 ============================
 -- 列表页固定按「审核通过 + 未删除」过滤后再按时间/金额排序，故建复合索引
 CREATE INDEX IF NOT EXISTS idx_task_list       ON task(audit_status, is_deleted, created_at DESC);
@@ -214,11 +237,11 @@ CREATE INDEX IF NOT EXISTS idx_porder_buyer    ON product_order(buyer_id);
 
 -- ============================ 视图 ============================
 -- 普通用户可见范围。后端查列表一律走视图，避免有人写查询时漏掉过滤条件
--- 导致未审核/已删除内容泄漏到前台（验收清单「边界检查」会查这一条）。
+-- 导致未审核、已删除或非公开状态内容泄漏到前台（验收清单「边界检查」会查这一条）。
 CREATE VIEW IF NOT EXISTS v_public_task AS
     SELECT * FROM task
-     WHERE audit_status = 'approved' AND is_deleted = 0;
+     WHERE audit_status = 'approved' AND is_deleted = 0 AND status <> 'completed';
 
 CREATE VIEW IF NOT EXISTS v_public_product AS
     SELECT * FROM product
-     WHERE audit_status = 'approved' AND is_deleted = 0;
+     WHERE audit_status = 'approved' AND is_deleted = 0 AND status = 'on_sale';

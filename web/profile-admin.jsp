@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/product.css">
     <link rel="stylesheet" href="css/profile.css">
-    <link rel="stylesheet" href="css/functional.css">
-    <title>管理员 · 个人空间 · CTCP</title>
+    <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
+    <title>管理员面板 · CTCP</title>
 </head>
 <body class="app-page app-page--admin">
 <div class="app-layout">
@@ -19,7 +19,7 @@
         <header class="workspace__topbar product-page-topbar profile-topbar">
             <div>
                 <span class="workspace__kicker">PROFILE · ADMIN PANEL</span>
-                <h1>个人空间 <span class="profile-role admin">管理员</span></h1>
+                <h1>管理员面板</h1>
             </div>
             <div class="workspace__actions">
                 <div class="profile-chip">
@@ -39,11 +39,11 @@
                 <div class="stat-item"><strong data-stat-tasks>0</strong><span>全部任务</span></div>
             </div>
 
-            <!-- Tabs -->
+            <!-- Tabs（无 Emoji，纯文字按钮） -->
             <div class="market-tools" style="margin-top:0; padding-bottom:16px; border-bottom: 1px solid #eff5f3;">
-                <button class="sort-pill sort-pill--active" type="button" data-admin-tab="tasks">📋 待审核任务</button>
-                <button class="sort-pill" type="button" data-admin-tab="products">🛒 待审核商品</button>
-                <button class="sort-pill" type="button" data-admin-tab="users">👥 用户管理</button>
+                <button class="sort-pill sort-pill--active" type="button" data-admin-tab="tasks">跑腿任务</button>
+                <button class="sort-pill" type="button" data-admin-tab="products">二手商品</button>
+                <button class="sort-pill" type="button" data-admin-tab="users">用户管理</button>
             </div>
 
             <!-- 审核状态筛选（任务/商品 Tab 下显示） -->
@@ -57,7 +57,7 @@
 
             <!-- 用户搜索（用户 Tab 下显示） -->
             <div class="user-search" data-admin-user-search style="display:none; padding-top:14px;">
-                <input type="text" data-admin-user-search-input placeholder="🔍 搜索用户（账号/昵称）">
+                <input type="text" data-admin-user-search-input placeholder="搜索用户（账号/昵称）">
                 <button class="btn-search" type="button">搜索</button>
             </div>
 
@@ -67,7 +67,7 @@
         </section>
     </main>
 </div>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

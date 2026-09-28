@@ -20,7 +20,8 @@
     }
 
     async function request(path, options) {
-        const config = Object.assign({method: "GET"}, options || {});
+        // 个人资料和“我的记录”依赖当前 Session，不能复用其他登录上下文的 GET 缓存。
+        const config = Object.assign({method: "GET", cache: "no-store"}, options || {});
         config.credentials = "include";
         config.headers = Object.assign({Accept: "application/json"}, config.headers || {});
         if (config.body && typeof config.body !== "string") {
@@ -32,7 +33,7 @@
         try {
             response = await fetch(`${API_BASE}${path}`, config);
         } catch (error) {
-            throw new ApiError("无法连接后端服务，请确认 8081 端口已启动", 0, null);
+            throw new ApiError("网络连接失败，请检查网络后刷新重试", 0, null);
         }
 
         const raw = await response.text();
@@ -61,6 +62,12 @@
         });
         const value = search.toString();
         return value ? `?${value}` : "";
+    }
+
+    /** 列表使用第一张非空图片，与详情页的逗号分隔图片格式保持一致。 */
+    function firstImageUrl(imageUrls) {
+        if (typeof imageUrls !== "string") return "";
+        return imageUrls.split(",").map((url) => url.trim()).find(Boolean) || "";
     }
 
     /** 始终以 web 根目录解析 JSP，避免外部脚本目录影响相对地址。 */
@@ -199,6 +206,20 @@
         element.className = `form-feedback${message ? ` form-feedback--${type || "error"}` : ""}`;
     }
 
+    function syncAvatarElement(node, user) {
+        if (user && user.avatarUrl) {
+            node.style.backgroundImage = `url("${user.avatarUrl}")`;
+            node.style.backgroundSize = "cover";
+            node.style.backgroundPosition = "center";
+            node.textContent = "";
+        } else {
+            node.style.backgroundImage = "";
+            node.style.backgroundSize = "";
+            node.style.backgroundPosition = "";
+            node.textContent = initial(user && user.username);
+        }
+    }
+
     async function hydrateShell() {
         const sidebar = document.querySelector(".sidebar");
         if (!sidebar) return;
@@ -213,7 +234,7 @@
             node.textContent = user ? user.username : "游客同学";
         });
         document.querySelectorAll("[data-user-avatar]").forEach((node) => {
-            node.textContent = initial(user && user.username);
+            syncAvatarElement(node, user);
         });
 
         document.querySelectorAll("[data-admin-link]").forEach((node) => {
@@ -244,6 +265,7 @@
         ApiError,
         request,
         query,
+        firstImageUrl,
         pageUrl,
         currentPagePath,
         pageUrlWithReturn,

@@ -5,20 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/product.css">
     <link rel="stylesheet" href="css/image-upload.css">
-    <link rel="stylesheet" href="css/functional.css">
+    <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
+    <link rel="stylesheet" href="css/listing.css">
     <title>CTCP · 发布跑腿任务</title>
 </head>
 <body class="app-page app-page--task">
 <div class="app-layout">
     <jsp:include page="sidebar.jsp" />
 
-    <main class="workspace product-page-workspace">
+    <main class="workspace product-page-workspace listing-publish-workspace">
         <header class="workspace__topbar product-page-topbar">
             <div><span class="workspace__kicker">ERRAND · PUBLISH TASK</span><h1>发布跑腿任务</h1></div>
-            <div class="workspace__actions"><a class="back-link" href="task-hall.jsp">← 返回任务列表</a></div>
         </header>
 
         <section class="publish-layout" aria-label="发布任务内容">
@@ -29,6 +29,7 @@
                 </div>
 
                 <form class="publish-form" data-task-publish novalidate>
+                    <fieldset class="publish-fields" data-publish-fields disabled>
                     <div class="publish-form-grid">
                         <div class="form-field form-field--full">
                             <label for="task-title">任务标题</label>
@@ -54,7 +55,7 @@
                             <label for="task-amount">跑腿金额 <span>元</span></label>
                             <div class="field-with-prefix">
                                 <span>￥</span>
-                                <input type="number" id="task-amount" name="amount" value="0" step="0.5" min="0">
+                                <input type="number" id="task-amount" name="amount" value="0" step="0.5" min="0" max="100000">
                             </div>
                         </div>
                         <div class="form-field form-field--full">
@@ -79,6 +80,7 @@
                         <a class="secondary-action" href="task-hall.jsp">取消</a>
                         <button class="primary-action" type="submit"><span>立即发布</span><span>→</span></button>
                     </div>
+                    </fieldset>
                 </form>
             </section>
 
@@ -87,15 +89,8 @@
                     <div class="publish-preview-card__head"><span>发布预览</span><span class="preview-dots">•••</span></div>
 
                     <!-- ===== 图片上传区域 ===== -->
-                    <div class="publish-preview-visual image-upload-zone" data-task-upload-zone>
-                        <div class="image-upload-placeholder" data-upload-placeholder>
-                            <span class="upload-icon">📷</span>
-                            <span class="upload-text">点击上传图片</span>
-                            <span class="upload-hint">支持 JPG、PNG，最多 3 张</span>
-                        </div>
-                        <div class="image-upload-grid" data-task-images></div>
-                        <input type="file" id="taskImageInput" accept="image/*" multiple style="display:none;">
-                    </div>
+                    <div class="image-upload-zone" data-task-upload-zone></div>
+                    <input type="file" id="taskImageInput" accept="image/jpeg,image/png,image/gif,image/webp" multiple hidden>
 
                     <span class="preview-tag" data-preview-status>待接取</span>
                     <h3 data-preview-title>你的任务标题</h3>
@@ -111,7 +106,7 @@
                     <h3>发布流程</h3>
                     <ol>
                         <li><span>01</span><p>填写任务信息</p></li>
-                        <li><span>02</span><p>发布后进入任务大厅</p></li>
+                        <li><span>02</span><p>审核通过后进入任务大厅</p></li>
                         <li><span>03</span><p>其他同学接取后完成</p></li>
                     </ol>
                 </div>
@@ -119,8 +114,10 @@
         </section>
     </main>
 </div>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
+<script src="js/listing-gallery.js"></script>
 <script src="js/image-upload.js"></script>
+<script src="js/listing-editor.js"></script>
 <script src="js/task-publish.js"></script>
 </body>
 </html>

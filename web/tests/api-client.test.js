@@ -56,6 +56,7 @@ async function main() {
     assert.equal(result.id, 2);
     assert.equal(captured.url, "http://localhost:8081/api/login");
     assert.equal(captured.options.credentials, "include");
+    assert.equal(captured.options.cache, "no-store");
     assert.equal(captured.options.headers["Content-Type"], "application/json; charset=UTF-8");
     assert.deepEqual(JSON.parse(captured.options.body), {account: "alice", password: "alice123"});
     assert.equal(context.CTCP.pageUrl("secondhand.jsp"), "http://localhost:8080/CTCP/secondhand.jsp");

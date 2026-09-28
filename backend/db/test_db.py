@@ -149,12 +149,12 @@ def test_queries(conn):
     ).fetchall()
     expect_rows("关键词检索任务「快递」", rows, show=lambda r: "#%d %s" % (r[0], r[1]))
 
-    kw = "%鼠标%"
+    kw = "%投影%"
     rows = conn.execute(
         """SELECT id, title FROM v_public_product
             WHERE title LIKE ? OR description LIKE ?""", (kw, kw)
     ).fetchall()
-    expect_rows("关键词检索商品「鼠标」", rows, show=lambda r: "#%d %s" % (r[0], r[1]))
+    expect_rows("关键词检索在售商品「投影」", rows, show=lambda r: "#%d %s" % (r[0], r[1]))
 
     # --- 排序 ---
     rows = conn.execute(
@@ -237,6 +237,8 @@ def test_queries(conn):
                  conn.execute("SELECT id FROM v_public_task WHERE audit_status <> 'approved'").fetchall())
     expect_empty("被驳回商品未出现在前台列表",
                  conn.execute("SELECT id FROM v_public_product WHERE audit_status = 'rejected'").fetchall())
+    expect_empty("已售出或已完成商品未出现在前台列表",
+                 conn.execute("SELECT id FROM v_public_product WHERE status <> 'on_sale'").fetchall())
     expect_empty("软删除预留任务未出现在前台列表",
                  conn.execute("SELECT id FROM v_public_task WHERE is_deleted = 1").fetchall())
 

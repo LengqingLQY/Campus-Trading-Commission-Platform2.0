@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/secondhand.css">
-    <link rel="stylesheet" href="css/functional.css">
+    <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
     <title>CTCP · 二手交易</title>
 </head>
 <body class="app-page app-page--secondhand">
@@ -32,7 +32,7 @@
                     <span class="banner-label">校园闲置小集 · CAMPUS MARKET</span>
                     <h2>好物不闲置，<br><em>刚好遇见你。</em></h2>
                     <p>搜索需要的物品，查看真实信息，购买后与卖家在校园内完成交接。</p>
-                    <div class="banner-meta"><span>● 校园内见面交易</span><span>● 不接入在线支付</span></div>
+                    <div class="banner-meta"><span>闲置换新主</span><span>好物遇知音</span></div>
                 </div>
                 <div class="banner-art" aria-hidden="true">
                     <div class="art-ring art-ring--large"></div><div class="art-ring art-ring--small"></div>
@@ -77,7 +77,7 @@
         </section>
     </main>
 </div>
-<script src="js/api.js"></script>
+<script src="js/api.js?v=20260909-2218"></script>
 <script src="js/market.js"></script>
 </body>
 </html>

@@ -1,0 +1,5 @@
+/mvnw text eol=lf
+/mvnw.cmd text eol=crlf
+/.mvn/jvm.config text eol=lf
+/.mvn/maven.config text eol=lf
+/.mvn/wrapper/maven-wrapper.properties text eol=lf

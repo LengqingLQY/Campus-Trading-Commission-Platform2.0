@@ -41,7 +41,7 @@ public class TaskController {
      */
     @GetMapping("/public/tasks/{id}")
     public Result detail(@PathVariable int id, HttpSession session) {
-        return Result.ok(taskService.getTask(id, currentUserIdOrNull(session)));
+        return Result.ok(taskService.getTask(id, currentUserOrNull(session)));
     }
 
     /**
@@ -90,6 +90,22 @@ public class TaskController {
     }
 
     /**
+     * GET /api/tasks/{id}/edit —— 发布者读取本人原稿（增量契约：商品与跑腿详情评论及修改 §4.1）。
+     */
+    @GetMapping("/tasks/{id}/edit")
+    public Result edit(@PathVariable int id, HttpSession session) {
+        return Result.ok(taskService.getTaskForEdit(id, currentUser(session).getId()));
+    }
+
+    /**
+     * PUT /api/tasks/{id} —— 发布者保存修改，重新进入待审核（§4.2）。
+     */
+    @PutMapping("/tasks/{id}")
+    public Result update(@PathVariable int id, @RequestBody TaskCreateDTO dto, HttpSession session) {
+        return Result.ok(taskService.updateTask(id, dto, currentUser(session).getId()));
+    }
+
+    /**
      * POST /api/tasks/{id}/termination-request —— 发起终止申请。
      */
     @PostMapping("/tasks/{id}/termination-request")
@@ -132,8 +148,7 @@ public class TaskController {
         return user;
     }
 
-    private Integer currentUserIdOrNull(HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        return user == null ? null : user.getId();
+    private User currentUserOrNull(HttpSession session) {
+        return (User) session.getAttribute("user");
     }
 }
