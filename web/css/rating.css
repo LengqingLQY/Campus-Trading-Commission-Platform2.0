@@ -1,0 +1,173 @@
+/* 交易双方评价组件样式 */
+
+/* ===== 只读星星 ===== */
+.rating-stars {
+    display: inline-flex;
+    gap: 1px;
+    line-height: 1;
+    font-size: 14px;
+}
+.rating-star {
+    color: #d9d9d9;
+}
+.rating-star.is-filled {
+    color: #faad14;
+}
+
+/* ===== 评分徽章 ===== */
+.rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #595959;
+    vertical-align: middle;
+}
+.rating-badge .rating-score {
+    color: #fa8c16;
+    font-weight: 600;
+}
+.rating-badge--empty {
+    color: #bfbfbf;
+}
+
+/* 姓名旁的紧凑徽章（列表/详情用） */
+.user-rating-link.rating-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.user-rating-link {
+    color: inherit;
+    text-decoration: none;
+}
+.user-rating-link:hover {
+    text-decoration: underline;
+}
+
+/* ===== 星级选择器（带文字标签的单选按钮） ===== */
+.rating-selector {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0;
+}
+.rating-selector.is-disabled {
+    opacity: .65;
+    pointer-events: none;
+}
+.rating-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    background: #fff;
+    transition: border-color .15s, background .15s, color .15s;
+}
+.rating-option:hover {
+    border-color: #faad14;
+}
+.rating-option input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.rating-option__star {
+    color: #d9d9d9;
+    font-size: 16px;
+    line-height: 1;
+}
+.rating-option__label {
+    color: #595959;
+}
+.rating-option:has(input:checked) {
+    border-color: #faad14;
+    background: #fffbe6;
+}
+.rating-option:has(input:checked) .rating-option__star {
+    color: #faad14;
+}
+.rating-option:has(input:checked) .rating-option__label {
+    color: #d48806;
+    font-weight: 600;
+}
+.rating-option:focus-within {
+    outline: 2px solid #ffd666;
+    outline-offset: 1px;
+}
+
+/* ===== 评价区块（订单页） ===== */
+.rating-block {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    background: #fafafa;
+}
+.rating-block__title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #262626;
+}
+.rating-block__counterpart {
+    font-size: 13px;
+    color: #595959;
+    margin-bottom: 8px;
+}
+.rating-block__counterpart strong {
+    color: #262626;
+}
+.rating-submit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+.rating-feedback {
+    font-size: 13px;
+    margin-top: 8px;
+}
+.rating-feedback.is-error {
+    color: #cf1322;
+}
+.rating-feedback.is-success {
+    color: #389e0d;
+}
+.rating-done {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #389e0d;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ===== 公开评分页 ===== */
+.user-rating-summary {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+}
+.user-rating-column {
+    flex: 1;
+    min-width: 200px;
+    padding: 16px;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    background: #fff;
+}
+.user-rating-column h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    color: #262626;
+}
+.user-rating-column .rating-stars {
+    font-size: 20px;
+}

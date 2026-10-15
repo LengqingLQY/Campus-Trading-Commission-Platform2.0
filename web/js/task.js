@@ -2,6 +2,7 @@
     "use strict";
 
     var api = window.CTCP;
+    var R = window.CTCPRating;
     var root = document.querySelector("[data-task-grid]");
     if (!root) return;
 
@@ -31,33 +32,34 @@
         var statusText = statusNames[item.status] || item.status;
         var cls = statusClass[item.status] || "";
         var firstImage = getFirstImage(item);
+        var publisherName = api.escapeHtml(item.publisherName || "校园同学");
+        var publisherLink = item.publisherId ? R.userRatingLink(item.publisherId, publisherName) : publisherName;
+        var publisherBadge = R.ratingBadge({average: item.publisherRatingAverage, count: item.publisherRatingCount}, "buyer");
         var visualContent = firstImage
             ? '<img src="' + api.escapeHtml(firstImage) + '" alt="任务图片" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">'
             : '<span class="product-emoji" aria-hidden="true">' + (index % 2 ? "🏃" : "📦") + '</span>';
         var visualClass = firstImage ? "product-visual product-visual--has-image" : "product-visual product-visual--" + ["mint", "sky", "peach", "lemon"][index % 4];
 
         return '<article class="product-card product-card--task">\n' +
-            '    <a class="product-card__link" href="' + api.pageUrlWithReturn("task-detail.jsp?taskId=" + item.id) + '">\n' +
-            '        <div class="' + visualClass + '" style="position:relative;overflow:hidden;">\n' +
-            '            ' + visualContent + '\n' +
+            '    <div class="' + visualClass + '" style="position:relative;overflow:hidden;">\n' +
+            '        ' + visualContent + '\n' +
+            '    </div>\n' +
+            '    <div class="product-info">\n' +
+            '        <div class="product-tags">\n' +
+            '            <span class="category-tag">跑腿</span>\n' +
+            '            <span class="condition-tag ' + cls + '">' + api.escapeHtml(statusText) + '</span>\n' +
             '        </div>\n' +
-            '        <div class="product-info">\n' +
-            '            <div class="product-tags">\n' +
-            '                <span class="category-tag">跑腿</span>\n' +
-            '                <span class="condition-tag ' + cls + '">' + api.escapeHtml(statusText) + '</span>\n' +
-            '            </div>\n' +
-            '            <h3>' + api.escapeHtml(item.title) + '</h3>\n' +
-            '            <p class="product-description">' + api.escapeHtml(item.description || "暂无任务说明") + '</p>\n' +
-            '            <div class="product-meta">\n' +
-            '                <span>⌖ ' + api.escapeHtml(item.pickup || "待定") + ' → ' + api.escapeHtml(item.delivery || "待定") + '</span>\n' +
-            '                <span>' + (item.deadline ? "截止 " + api.shortTime(item.deadline) : "时间待定") + '</span>\n' +
-            '            </div>\n' +
-            '            <div class="product-footer">\n' +
-            '                <div class="product-price"><small>￥</small><strong>' + api.money(item.amount) + '</strong></div>\n' +
-            '                <span class="seller-name">' + api.escapeHtml(item.publisherName || "校园同学") + '发布</span>\n' +
-            '            </div>\n' +
+            '        <h3><a class="product-card__link stretched-link" href="' + api.pageUrlWithReturn("task-detail.jsp?taskId=" + item.id) + '">' + api.escapeHtml(item.title) + '</a></h3>\n' +
+            '        <p class="product-description">' + api.escapeHtml(item.description || "暂无任务说明") + '</p>\n' +
+            '        <div class="product-meta">\n' +
+            '            <span>⌖ ' + api.escapeHtml(item.location || "地点待定") + '</span>\n' +
+            '            <span>' + (item.deadline ? "截止 " + api.shortTime(item.deadline) : "时间待定") + '</span>\n' +
             '        </div>\n' +
-            '    </a>\n' +
+            '        <div class="product-footer">\n' +
+            '            <div class="product-price"><small>￥</small><strong>' + api.money(item.reward) + '</strong></div>\n' +
+            '            <span class="seller-name">' + publisherLink + ' 发布 ' + publisherBadge + '</span>\n' +
+            '        </div>\n' +
+            '    </div>\n' +
             '</article>';
     }
 

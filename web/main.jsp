@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/functional.css?v=20260909-todos">
+    <link rel="stylesheet" href="css/rating.css">
     <title>CTCP · 发现首页</title>
 </head>
 <body class="app-page app-page--home">
@@ -67,6 +68,7 @@
 </div>
 <script src="js/api.js?v=20260909-2218"></script>
 <script src="js/domain.js"></script>
+<script src="js/rating.js"></script>
 <script src="js/home.js?v=20260909-todos"></script>
 </body>
 </html>

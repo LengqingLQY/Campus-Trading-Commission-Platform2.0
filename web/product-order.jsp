@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/product.css">
+    <link rel="stylesheet" href="css/rating.css">
     <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
     <title>CTCP · 二手交易进度</title>
 </head>
@@ -25,6 +26,7 @@
 </div>
 <script src="js/api.js?v=20260909-2218"></script>
 <script src="js/domain.js"></script>
+<script src="js/rating.js"></script>
 <script src="js/product-order.js"></script>
 </body>
 </html>

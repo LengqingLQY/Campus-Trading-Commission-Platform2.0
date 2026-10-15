@@ -2,6 +2,7 @@
     "use strict";
 
     const api = window.CTCP;
+    const R = window.CTCPRating;
     const root = document.querySelector("[data-product-detail]");
     if (!root) return;
 
@@ -126,7 +127,7 @@
                     <div><dt>交易地点</dt><dd>⌖ ${api.escapeHtml(product.location || "双方协商")}</dd></div>
                     <div><dt>发布时间</dt><dd>${api.shortTime(product.createdAt)}</dd></div>
                     <div><dt>联系方式</dt><dd data-product-contact>${api.escapeHtml(product.contact || "购买后请通过平台记录联系")}</dd></div>
-                    <div><dt>卖家</dt><dd class="seller-detail"><span class="avatar avatar--tiny">${api.initial(product.sellerName)}</span>${api.escapeHtml(product.sellerName || "校园同学")}</dd></div>
+                    <div><dt>卖家</dt><dd class="seller-detail"><span class="avatar avatar--tiny">${api.initial(product.sellerName)}</span>${product.sellerId ? R.userRatingLink(product.sellerId, api.escapeHtml(product.sellerName || "校园同学")) : api.escapeHtml(product.sellerName || "校园同学")} ${R.ratingBadge({average: product.sellerRatingAverage, count: product.sellerRatingCount}, "seller")}</dd></div>
                 </dl>
                 <div class="detail-description"><h3>商品描述</h3><p>${api.escapeHtml(product.description || "卖家暂未补充更多描述。")}</p></div>
                 <div class="detail-actions">${action}${editAction}${ownerDeleteAction}${returnLink()}</div>
