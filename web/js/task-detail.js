@@ -2,6 +2,7 @@
     "use strict";
 
     var api = window.CTCP;
+    var R = window.CTCPRating;
     var root = document.querySelector("[data-task-detail]");
     if (!root) return;
 
@@ -152,6 +153,11 @@
         var isAccepter = currentUser && task.accepterId && Number(currentUser.id) === Number(task.accepterId);
         var isParticipant = isOwner || isAccepter;
 
+        // 参与者可见时提供进入本次跑腿订单的链接（评价入口以订单记录为准，不依赖任务详情页）。
+        var orderLink = (isParticipant && task.taskOrderId)
+            ? '<a class="secondary-action" href="' + api.escapeHtml(api.pageUrl("task-order.jsp?orderId=" + task.taskOrderId)) + '">查看订单 / 去评价</a>'
+            : "";
+
         var actionBtn = "", deleteBtn = "", terminationArea = "", terminationEntry = "", footNote = "";
         var pending = isParticipant ? pendingTermination() : null;
         var editBtn = isOwner && task.status === "open" && !isRejected
@@ -252,7 +258,7 @@
             '</div>' +
             rejectBanner +
             '<h2>' + api.escapeHtml(task.title) + '</h2>' +
-            '<p class="detail-subtitle">发布者：' + api.escapeHtml(task.publisherName || "校园同学") + ' · ' + api.shortTime(task.createdAt) + '</p>' +
+            '<p class="detail-subtitle">发布者：' + (task.publisherId ? R.userRatingLink(task.publisherId, api.escapeHtml(task.publisherName || "校园同学")) : api.escapeHtml(task.publisherName || "校园同学")) + ' ' + R.ratingBadge({average: task.publisherRatingAverage, count: task.publisherRatingCount}, "buyer") + ' · ' + api.shortTime(task.createdAt) + '</p>' +
             '<div class="detail-price"><small>￥</small><strong>' + api.money(task.amount) + '</strong><span>跑腿费 · 仅作信息记录</span></div>' +
             '<div class="detail-divider"></div>' +
             '<dl class="detail-facts">' +
@@ -270,6 +276,7 @@
             '<div class="detail-actions">' +
             actionBtn +
             editBtn +
+            orderLink +
             deleteBtn +
             '</div>' +
             terminationEntry +

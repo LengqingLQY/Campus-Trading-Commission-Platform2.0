@@ -3,11 +3,14 @@
 
     const api = window.CTCP;
     const domain = window.CTCPDomain;
+    const R = window.CTCPRating;
     const root = document.querySelector("[data-order-detail]");
     if (!root) return;
     const orderId = Number(new URLSearchParams(location.search).get("orderId"));
     let order = null;
     let terminationComposerOpen = false;
+    let ratingSelector = null;
+    let selectedStars = null;
 
     const statusNames = {
         created: "待卖家交付",
@@ -151,6 +154,7 @@
                         <li class="${timelineClass(2)}"><i>${timelineIcon(2)}</i><div><strong>买家验货并确认收到</strong><small>${order.finishedAt ? `买家于 ${api.shortTime(order.finishedAt)} 确认完成` : "请当面核对商品情况，确认无误后完成交易"}</small></div></li>
                     </ol>
                     ${actionArea()}
+                    ${ratingSectionHtml()}
                 </article>
                 <aside class="order-card order-card--contact">
                     <div class="order-card__heading"><span>02</span><div><h3>交易信息</h3><p>联系方式仅对本次交易双方展示</p></div></div>
@@ -183,6 +187,77 @@
         root.querySelectorAll("[data-termination-action]").forEach((button) => {
             button.addEventListener("click", handleTerminationAction);
         });
+        mountRating();
+    }
+
+    function counterpartInfo() {
+        const role = order.viewerRole;
+        const name = role === "buyer" ? (order.sellerName || "校园同学") : (order.buyerName || "校园同学");
+        const counterpartRole = role === "buyer" ? "seller" : "buyer";
+        return {name, counterpartRole};
+    }
+
+    function ratingSectionHtml() {
+        const {name, counterpartRole} = counterpartInfo();
+        const counterpartRating = order.counterpartyRating || null;
+        const myStars = order.myRatingStars;
+        const completed = order.status === "completed";
+
+        if (completed) {
+            if (myStars != null) {
+                return `<section class="rating-block" data-rating-block>
+                    <div class="rating-block__title">交易评价</div>
+                    <div class="rating-block__counterpart">你已为 <strong>${api.escapeHtml(name)}</strong> 的${R.roleLabel(counterpartRole)}信誉评分</div>
+                    <div class="rating-done">${R.starsHtml(myStars)}<span>已评价 ${myStars} 星</span></div>
+                </section>`;
+            }
+            return `<section class="rating-block" data-rating-block>
+                <div class="rating-block__title">交易评价</div>
+                <div class="rating-block__counterpart">为 <strong>${api.escapeHtml(name)}</strong> 的${R.roleLabel(counterpartRole)}信誉评分</div>
+                <div data-rating-selector></div>
+                <div class="rating-submit-row">
+                    <button class="primary-action" type="button" data-rating-submit>提交评价</button>
+                    <span class="rating-feedback" data-rating-feedback aria-live="polite"></span>
+                </div>
+            </section>`;
+        }
+        return `<section class="rating-block" data-rating-block>
+            <div class="rating-block__title">交易评价</div>
+            <div class="rating-block__counterpart"><strong>${api.escapeHtml(name)}</strong> 的${R.roleLabel(counterpartRole)}信誉</div>
+            ${R.ratingBadge(counterpartyRating, counterpartRole)}
+            <p class="rating-feedback">交易完成后，你可以为对方评分。</p>
+        </section>`;
+    }
+
+    function mountRating() {
+        const slot = root.querySelector("[data-rating-selector]");
+        if (slot) {
+            ratingSelector = R.mountStarSelector(slot, {
+                onSelect(stars) {
+                    selectedStars = stars;
+                }
+            });
+        }
+        const button = root.querySelector("[data-rating-submit]");
+        if (button) button.addEventListener("click", submitRating);
+    }
+
+    async function submitRating(button) {
+        const feedback = root.querySelector("[data-rating-feedback]");
+        if (selectedStars == null) {
+            api.setFeedback(feedback, "请先选择 1～5 星");
+            return;
+        }
+        api.setFeedback(feedback, "");
+        api.setLoading(button, true, "提交中...");
+        try {
+            await api.request(`/product-orders/${orderId}/rating`, {method: "POST", body: {stars: selectedStars}});
+            api.toast("评价已提交", "success");
+            await load();
+        } catch (error) {
+            api.setFeedback(feedback, error.message || "提交失败，请稍后重试");
+            api.setLoading(button, false);
+        }
     }
 
     function handleTerminationAction(event) {

@@ -2,6 +2,7 @@
     "use strict";
 
     var api = window.CTCP;
+    var R = window.CTCPRating;
     var root = document.querySelector("[data-profile-root]");
     if (!root) return;
 
@@ -22,7 +23,7 @@
         sold: "done"
     };
     var auditNames = { pending: "待审核", approved: "已通过", rejected: "已驳回" };
-    var recordTabs = new Set(["published-tasks", "published-products", "accepted", "bought"]);
+    var recordTabs = new Set(["published-tasks", "published-products", "accepted", "bought", "rating-orders"]);
     var requestedTab = new URLSearchParams(location.search).get("recordTab");
     var currentTab = recordTabs.has(requestedTab) ? requestedTab : "published-tasks";
     var userData = null;
@@ -400,6 +401,10 @@
         var list = document.querySelector("[data-record-list]");
         list.innerHTML = '<div class="loading-state"><span class="button-spinner"></span><p>正在加载记录...</p></div>';
 
+        if (type === "rating-orders") {
+            return loadRatingOrders();
+        }
+
         try {
             var data;
             if (type === "published-tasks" || type === "accepted") {
@@ -410,6 +415,72 @@
                 data = await api.request("/me/products" + api.query({ type: param, page: 1, size: 50 }));
             }
             renderRecords(data, type);
+        } catch (error) {
+            list.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(error.message) + '</p></div>';
+        }
+    }
+
+    // ===== 我的两栏信誉 =====
+    async function loadProfileRating() {
+        var slot = document.querySelector("[data-profile-rating]");
+        if (!slot) return;
+        if (!userData || !userData.id) {
+            slot.innerHTML = '<p class="record-meta">登录后可查看你的信誉评分</p>';
+            return;
+        }
+        try {
+            var rating = await R.fetchUserRating(userData.id);
+            slot.innerHTML =
+                '<div class="user-rating-summary">' +
+                '  <div class="user-rating-column"><h3>买方／需求方信誉</h3>' + R.ratingBadge(rating.buyer, "buyer") + '</div>' +
+                '  <div class="user-rating-column"><h3>卖方／服务方信誉</h3>' + R.ratingBadge(rating.seller, "seller") + '</div>' +
+                '</div>';
+        } catch (error) {
+            slot.innerHTML = '<p class="record-meta">评分加载失败：' + api.escapeHtml(error.message) + '</p>';
+        }
+    }
+
+    // ===== 待评价 / 评价记录 =====
+    async function loadRatingOrders() {
+        var list = document.querySelector("[data-record-list]");
+        list.innerHTML = '<div class="loading-state"><span class="button-spinner"></span><p>正在加载评价记录...</p></div>';
+        try {
+            var data = await api.request("/me/rating-orders" + api.query({ state: "all" }));
+            var items = data.list || [];
+            if (!items.length) {
+                list.innerHTML = '<div class="empty-state"><h3>暂无可评价或已评价的订单</h3></div>';
+                return;
+            }
+            var html = items.map(function(item) {
+                var isTask = item.kind === "task";
+                var orderUrl = (isTask ? "task-order.jsp" : "product-order.jsp") + "?orderId=" + item.orderId;
+                var roleText = item.counterpartRole
+                    ? (" · " + (item.counterpartRole === "buyer" ? "买方／需求方" : "卖方／服务方"))
+                    : "";
+                var title = api.escapeHtml(item.title || (isTask ? "跑腿任务" : "二手商品"));
+                var counterpartId = item.counterpartyId != null ? item.counterpartyId : "";
+                var counterpartName = api.escapeHtml(item.counterpartyName || "校园同学");
+                var counterpart = counterpartId
+                    ? '<a class="user-rating-link" href="' + api.pageUrl("user-rating.jsp?userId=" + encodeURIComponent(counterpartId)) + '">' + counterpartName + '</a>'
+                    : counterpartName;
+                var statusHtml;
+                if (item.myRatingStars != null) {
+                    statusHtml = '<span class="rating-done">' + R.starsHtml(item.myRatingStars) + ' 已评价</span>';
+                } else {
+                    statusHtml = '<span class="status-tag pending">待评价</span>';
+                }
+                return '<div class="record-item">' +
+                    '<div class="record-info">' +
+                    '  <span class="record-title">' + title + '</span>' +
+                    '  <p class="record-meta">交易对象：' + counterpart + roleText + '</p>' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+                    statusHtml +
+                    '<a class="secondary-action" href="' + api.pageUrl(orderUrl) + '">' + (item.myRatingStars != null ? "查看" : "去评价") + '</a>' +
+                    '</div>' +
+                    '</div>';
+            }).join("");
+            list.innerHTML = html || '<div class="empty-state"><h3>暂无记录</h3></div>';
         } catch (error) {
             list.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(error.message) + '</p></div>';
         }
@@ -443,6 +514,7 @@
 
             initTabs();
             loadRecords(currentTab);
+            loadProfileRating();
 
             // 头像上传 + 恢复默认
             initAvatarUpload();

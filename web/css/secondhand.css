@@ -434,6 +434,7 @@
 }
 
 .product-card {
+    position: relative;
     min-width: 0;
     overflow: hidden;
     background: #ffffff;
@@ -449,8 +450,22 @@
 }
 
 .product-card__link {
-    display: block;
-    height: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+/* 整卡可点：标题链接的 ::after 铺满卡片（定位到最近的定位祖先 .product-card）；
+   卖家名及其内部链接通过 z-index 浮在 ::after 之上，仍可独立点击，避免 <a> 嵌套 <a> 的非法结构 */
+.product-card__link.stretched-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+.product-card .seller-name,
+.product-card .seller-name a,
+.product-card .user-rating-link {
+    position: relative;
+    z-index: 2;
 }
 
 .product-visual {

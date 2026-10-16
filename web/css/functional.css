@@ -402,6 +402,34 @@ button:disabled {
 .discovery-card__meta strong { color: var(--coral); font-size: 17px; }
 .discovery-card__meta span { overflow: hidden; color: #799697; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 
+/* 首页卡片：标题作拉伸链接（整卡可点，避免外层 <a> 嵌套内层 <a>） */
+.discovery-card__link {
+    color: inherit;
+    text-decoration: none;
+}
+.discovery-card__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+/* 卖家/发布者姓名 + 对应身份评分徽章；浮于拉伸层之上，保证链接可点 */
+.discovery-card__seller {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #799697;
+    position: relative;
+    z-index: 2;
+}
+.discovery-card__seller .user-rating-link {
+    color: #2f7270;
+    font-weight: 600;
+}
+
 .todo-panel {
     position: sticky;
     top: 24px;

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/product.css">
     <link rel="stylesheet" href="css/image-upload.css">
     <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
+    <link rel="stylesheet" href="css/rating.css">
     <link rel="stylesheet" href="css/listing.css">
     <title>CTCP · 任务详情</title>
 </head>
@@ -35,6 +36,7 @@
     </main>
 </div>
 <script src="js/api.js?v=20260909-2218"></script>
+<script src="js/rating.js"></script>
 <script src="js/listing-gallery.js"></script>
 <script src="js/listing-comments.js"></script>
 <script src="js/task-detail.js"></script>

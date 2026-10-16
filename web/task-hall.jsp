@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/secondhand.css">
     <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
+    <link rel="stylesheet" href="css/rating.css">
     <title>CTCP · 跑腿任务</title>
 </head>
 <body class="app-page app-page--task">
@@ -75,6 +76,7 @@
     </main>
 </div>
 <script src="js/api.js?v=20260909-2218"></script>
+<script src="js/rating.js"></script>
 <script src="js/task.js"></script>
 </body>
 </html>

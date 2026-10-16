@@ -2,6 +2,7 @@
     "use strict";
 
     const api = window.CTCP;
+    const R = window.CTCPRating;
     const root = document.querySelector("[data-product-grid]");
     if (!root) return;
 
@@ -16,6 +17,9 @@
     function card(item, index) {
         const sold = item.status !== "on_sale";
         const firstImage = api.firstImageUrl(item.imageUrls);
+        const sellerName = api.escapeHtml(item.sellerName || "校园同学");
+        const sellerLink = item.sellerId ? R.userRatingLink(item.sellerId, sellerName) : sellerName;
+        const sellerBadge = R.ratingBadge({average: item.sellerRatingAverage, count: item.sellerRatingCount}, "seller");
         const visualContent = firstImage
             ? `<img src="${api.escapeHtml(firstImage)}" alt="商品图片" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">`
             : `<span class="product-emoji" aria-hidden="true">${emoji[item.category] || "✨"}</span>`;
@@ -24,29 +28,27 @@
             : `product-visual product-visual--${["mint", "sky", "peach", "lemon"][index % 4]}`;
         return `
             <article class="product-card${sold ? " product-card--sold" : ""}">
-                <a class="product-card__link" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${item.id}`)}">
-                    <div class="${visualClass}">
-                        <span class="visual-label">${api.escapeHtml(categoryNames[item.category] || "二手好物")}</span>
-                        ${visualContent}
-                        ${sold ? `<span class="sale-badge">${item.status === "completed" ? "交易完成" : "已售出"}</span>` : ""}
+                <div class="${visualClass}">
+                    <span class="visual-label">${api.escapeHtml(categoryNames[item.category] || "二手好物")}</span>
+                    ${visualContent}
+                    ${sold ? `<span class="sale-badge">${item.status === "completed" ? "交易完成" : "已售出"}</span>` : ""}
+                </div>
+                <div class="product-info">
+                    <div class="product-tags">
+                        <span class="category-tag">${api.escapeHtml(categoryNames[item.category] || "其他")}</span>
+                        <span class="condition-tag">${api.escapeHtml(conditionNames[item.condition] || "成色良好")}</span>
                     </div>
-                    <div class="product-info">
-                        <div class="product-tags">
-                            <span class="category-tag">${api.escapeHtml(categoryNames[item.category] || "其他")}</span>
-                            <span class="condition-tag">${api.escapeHtml(conditionNames[item.condition] || "成色良好")}</span>
-                        </div>
-                        <h3>${api.escapeHtml(item.title)}</h3>
-                        <p class="product-description">${api.escapeHtml(item.description || "卖家暂未填写商品描述")}</p>
-                        <div class="product-meta">
-                            <span>⌖ ${api.escapeHtml(item.location || "交易地点待沟通")}</span>
-                            <span>${api.shortTime(item.createdAt)}</span>
-                        </div>
-                        <div class="product-footer">
-                            <div class="product-price"><small>￥</small><strong>${api.money(item.price)}</strong></div>
-                            <span class="seller-name">${api.escapeHtml(item.sellerName || "校园同学")}发布</span>
-                        </div>
+                    <h3><a class="product-card__link stretched-link" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${item.id}`)}">${api.escapeHtml(item.title)}</a></h3>
+                    <p class="product-description">${api.escapeHtml(item.description || "卖家暂未填写商品描述")}</p>
+                    <div class="product-meta">
+                        <span>⌖ ${api.escapeHtml(item.location || "交易地点待沟通")}</span>
+                        <span>${api.shortTime(item.createdAt)}</span>
                     </div>
-                </a>
+                    <div class="product-footer">
+                        <div class="product-price"><small>￥</small><strong>${api.money(item.price)}</strong></div>
+                        <span class="seller-name">${sellerLink} 发布 ${sellerBadge}</span>
+                    </div>
+                </div>
             </article>`;
     }
 

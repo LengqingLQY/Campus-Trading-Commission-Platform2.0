@@ -3,6 +3,7 @@
 
     const api = window.CTCP;
     const domain = window.CTCPDomain;
+    const R = window.CTCPRating;
     const categoryNames = {
         book: "图书教材", electronic: "电子数码", daily: "生活日用",
         clothing: "服饰鞋帽", sports: "运动户外", other: "其他"
@@ -32,35 +33,41 @@
         const description = api.escapeHtml(item.description || "等待下一位同学发现的校园好物");
         const category = categoryNames[item.category] || "二手好物";
         const emoji = categoryEmoji[item.category] || "✨";
+        const sellerName = api.escapeHtml(item.sellerName || "校园同学");
+        const sellerLink = item.sellerId ? R.userRatingLink(item.sellerId, sellerName) : sellerName;
+        const sellerBadge = R.ratingBadge({average: item.sellerRatingAverage, count: item.sellerRatingCount}, "seller");
         return `
-            <a class="discovery-card discovery-card--product tone-${index % 4}" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${item.id}`)}">
+            <div class="discovery-card discovery-card--product tone-${index % 4}">
                 ${promoVisual(item, emoji, "二手交易", category)}
                 <div class="discovery-card__body">
-                    <h3>${title}</h3>
+                    <h3><a class="discovery-card__link stretched-link" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${item.id}`)}">${title}</a></h3>
                     <p>${description}</p>
                     <div class="discovery-card__meta">
                         <strong>￥${api.money(item.price)}</strong>
-                        <span>${api.escapeHtml(item.sellerName || "校园卖家")} · 去看看 →</span>
                     </div>
+                    <div class="discovery-card__seller">${sellerLink} 发布 ${sellerBadge}</div>
                 </div>
-            </a>`;
+            </div>`;
     }
 
     function promoTask(item, index) {
         const title = api.escapeHtml(item.title);
         const description = api.escapeHtml(item.description || "一份正在等待同学响应的校园互助");
+        const publisherName = api.escapeHtml(item.publisherName || "校园同学");
+        const publisherLink = item.publisherId ? R.userRatingLink(item.publisherId, publisherName) : publisherName;
+        const publisherBadge = R.ratingBadge({average: item.publisherRatingAverage, count: item.publisherRatingCount}, "buyer");
         return `
-            <a class="discovery-card discovery-card--task tone-${index % 4}" href="${api.pageUrl(`task-detail.jsp?taskId=${item.id}`)}">
+            <div class="discovery-card discovery-card--task tone-${index % 4}">
                 ${promoVisual(item, index % 2 ? "🏃" : "📦", "跑腿推广", "待接取")}
                 <div class="discovery-card__body">
-                    <h3>${title}</h3>
+                    <h3><a class="discovery-card__link stretched-link" href="${api.pageUrl(`task-detail.jsp?taskId=${item.id}`)}">${title}</a></h3>
                     <p>${description}</p>
                     <div class="discovery-card__meta">
-                        <strong>￥${api.money(item.amount)}</strong>
-                        <span>${api.escapeHtml(item.pickup || "校园内")} · 查看 →</span>
+                        <strong>￥${api.money(item.reward)}</strong>
                     </div>
+                    <div class="discovery-card__seller">${publisherLink} 发布 ${publisherBadge}</div>
                 </div>
-            </a>`;
+            </div>`;
     }
 
     function renderRecommendations() {
@@ -112,7 +119,7 @@
                 <span class="todo-item__content">
                     <span class="todo-item__role">跑腿任务 · 我是${role === "publisher" ? "发布者" : "接取者"}</span>
                     <strong>${api.escapeHtml(task.title)}</strong>
-                    <small>${api.escapeHtml(counterpart)} · ￥${api.money(task.amount)}</small>
+                    <small>${api.escapeHtml(counterpart)} · ￥${api.money(task.reward)}</small>
                 </span>
                 <span class="todo-item__status">${api.escapeHtml(statusText)}</span>
             </a>`;

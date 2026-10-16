@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/main.css?v=20260909-1733">
     <link rel="stylesheet" href="css/product.css">
     <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/rating.css">
     <link rel="stylesheet" href="css/functional.css?v=20260909-1733">
     <title>个人空间 · CTCP</title>
 </head>
@@ -97,6 +98,17 @@
                     </form>
                 </div>
 
+                <!-- ===== 我的信誉 ===== -->
+                <div class="profile-card">
+                    <div class="section-heading">
+                        <span class="section-heading__number"></span>
+                        <div><h2>我的信誉</h2><p>交易双方完成订单后可互相评价，分“买方／需求方”与“卖方／服务方”两栏展示。</p></div>
+                    </div>
+                    <div data-profile-rating>
+                        <div class="loading-state loading-state--compact"><span class="button-spinner"></span><p>正在加载信誉评分...</p></div>
+                    </div>
+                </div>
+
                 <!-- ===== 我的记录 ===== -->
                 <div class="profile-records" id="profile-records" data-profile-records>
                     <div class="section-heading" style="border-bottom:none;padding-bottom:0;">
@@ -109,6 +121,7 @@
                         <button class="profile-tab" type="button" data-record-tab="published-products">我上架的商品</button>
                         <button class="profile-tab" type="button" data-record-tab="accepted">我接取的任务</button>
                         <button class="profile-tab" type="button" data-record-tab="bought">我购买的商品</button>
+                        <button class="profile-tab" type="button" data-record-tab="rating-orders">待评价 / 评价记录</button>
                     </div>
 
                     <div data-record-list>
@@ -120,6 +133,7 @@
     </main>
 </div>
 <script src="js/api.js?v=20260909-2218"></script>
+<script src="js/rating.js"></script>
 <script src="js/profile.js"></script>
 </body>
 </html>
