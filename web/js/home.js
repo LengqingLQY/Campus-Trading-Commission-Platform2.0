@@ -63,7 +63,7 @@
                     <h3><a class="discovery-card__link stretched-link" href="${api.pageUrl(`task-detail.jsp?taskId=${item.id}`)}">${title}</a></h3>
                     <p>${description}</p>
                     <div class="discovery-card__meta">
-                        <strong>￥${api.money(item.reward)}</strong>
+                        <strong>￥${api.money(item.amount)}</strong>
                     </div>
                     <div class="discovery-card__seller">${publisherLink} 发布 ${publisherBadge}</div>
                 </div>
@@ -119,7 +119,7 @@
                 <span class="todo-item__content">
                     <span class="todo-item__role">跑腿任务 · 我是${role === "publisher" ? "发布者" : "接取者"}</span>
                     <strong>${api.escapeHtml(task.title)}</strong>
-                    <small>${api.escapeHtml(counterpart)} · ￥${api.money(task.reward)}</small>
+                    <small>${api.escapeHtml(counterpart)} · ￥${api.money(task.amount)}</small>
                 </span>
                 <span class="todo-item__status">${api.escapeHtml(statusText)}</span>
             </a>`;

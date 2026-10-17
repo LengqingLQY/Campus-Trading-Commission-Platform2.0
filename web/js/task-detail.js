@@ -150,12 +150,12 @@
         var statusText = isRejected ? "已驳回" : (statusNames[task.status] || task.status);
         var cls = isRejected ? "availability-badge ongoing" : (statusClass[task.status] || "availability-badge");
         var isOwner = currentUser && Number(currentUser.id) === Number(task.publisherId);
-        var isAccepter = currentUser && task.accepterId && Number(currentUser.id) === Number(task.accepterId);
+        var isAccepter = currentUser && task.viewerRole === "accepter";
         var isParticipant = isOwner || isAccepter;
 
         // 参与者可见时提供进入本次跑腿订单的链接（评价入口以订单记录为准，不依赖任务详情页）。
-        var orderLink = (isParticipant && task.taskOrderId)
-            ? '<a class="secondary-action" href="' + api.escapeHtml(api.pageUrl("task-order.jsp?orderId=" + task.taskOrderId)) + '">查看订单 / 去评价</a>'
+        var orderLink = (isParticipant && task.orderId)
+            ? '<a class="secondary-action" href="' + api.escapeHtml(api.pageUrl("task-order.jsp?orderId=" + task.orderId)) + '">查看订单 / 去评价</a>'
             : "";
 
         var actionBtn = "", deleteBtn = "", terminationArea = "", terminationEntry = "", footNote = "";
@@ -345,22 +345,6 @@
         } catch (e) { api.toast(e.message || "操作失败", "error"); api.setLoading(btn, false); }
     }
 
-    async function resolveAccepter() {
-        if (!currentUser || Number(currentUser.id) === Number(task.publisherId) || task.accepterId
-            || (task.status !== "accepted" && task.status !== "delivered")) return;
-        var page = 1;
-        while (true) {
-            var result = await api.request("/me/tasks" + api.query({type: "accepted", page: page, size: 50}));
-            var list = result.list || [];
-            if (list.some(function(item) { return Number(item.id) === taskId && item.orderStatus !== "cancelled"; })) {
-                task.accepterId = currentUser.id;
-                return;
-            }
-            if (list.length < 50 || page * 50 >= Number(result.total || 0)) return;
-            page += 1;
-        }
-    }
-
     async function load() {
         if (!Number.isInteger(taskId) || taskId < 1) {
             root.innerHTML = '<div class="empty-state"><h3>任务编号无效</h3></div>';
@@ -377,7 +361,6 @@
             ]);
             task = results[0];
             currentUser = results[1];
-            await resolveAccepter().catch(function() { api.toast("接取记录暂时无法读取，请刷新后重试", "error"); });
             render();
         } catch (e) {
             root.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(e.message) + '</p></div>';

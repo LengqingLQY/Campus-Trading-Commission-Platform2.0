@@ -8,7 +8,6 @@
 
     const orderId = Number(new URLSearchParams(location.search).get("orderId"));
     let order = null;
-    let ratingSelector = null;
     let selectedStars = null;
 
     const statusNames = {
@@ -27,7 +26,6 @@
 
     function ratingSectionHtml() {
         const {name, counterpartRole} = counterpartInfo();
-        const counterpartRating = order.counterpartyRating || null;
         const myStars = order.myRatingStars;
         const completed = order.status === "completed";
 
@@ -52,7 +50,6 @@
         return `<section class="rating-block" data-rating-block>
             <div class="rating-block__title">交易评价</div>
             <div class="rating-block__counterpart"><strong>${api.escapeHtml(name)}</strong> 的${R.roleLabel(counterpartRole)}信誉</div>
-            ${R.ratingBadge(counterpartyRating, counterpartRole)}
             <p class="rating-feedback">跑腿任务完成后，你可以为对方评分。</p>
         </section>`;
     }
@@ -84,6 +81,7 @@
                 <article class="order-card">
                     <div class="order-card__heading"><span>01</span><div><h3>订单状态</h3><p>接单者送达后，由发布者确认完成</p></div></div>
                     ${statusBanner()}
+                    ${R.ratingBadge(order.counterpartyRating, counterpartInfo().counterpartRole)}
                     ${ratingSectionHtml()}
                 </article>
                 <aside class="order-card order-card--contact">
@@ -94,6 +92,7 @@
                         <div><dt>订单状态</dt><dd>${statusNames[order.status] || api.escapeHtml(order.status)}</dd></div>
                     </dl>
                     <div class="order-actions">
+                        <a class="secondary-action" href="${api.safePageUrl(new URLSearchParams(location.search).get('returnTo'), 'profile-user.jsp?recordTab=rating-orders')}">返回评价记录</a>
                         <a class="secondary-action" href="${api.pageUrl("task-hall.jsp")}">返回任务列表</a>
                     </div>
                 </aside>
@@ -103,9 +102,10 @@
     }
 
     function mountRating() {
+        selectedStars = null;
         const slot = root.querySelector("[data-rating-selector]");
         if (slot) {
-            ratingSelector = R.mountStarSelector(slot, {
+            R.mountStarSelector(slot, {
                 onSelect(stars) {
                     selectedStars = stars;
                 }
@@ -115,7 +115,8 @@
         if (button) button.addEventListener("click", submitRating);
     }
 
-    async function submitRating(button) {
+    async function submitRating(event) {
+        const button = event.currentTarget;
         const feedback = root.querySelector("[data-rating-feedback]");
         if (selectedStars == null) {
             api.setFeedback(feedback, "请先选择 1～5 星");

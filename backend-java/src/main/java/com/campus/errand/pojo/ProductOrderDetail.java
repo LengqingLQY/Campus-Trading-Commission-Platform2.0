@@ -1,5 +1,8 @@
 package com.campus.errand.pojo;
 
+import com.campus.errand.dto.RatingSummary;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * 二手订单详情（契约 §8.5）。
  *
@@ -39,6 +42,15 @@ public class ProductOrderDetail {
     private String cancelledAt;     // 双方同意终止的时间
 
     private TerminationRequest terminationRequest;  // 待处理终止申请，无则为 null
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private Integer myRatingStars;
+    private RatingSummary counterpartyRating;
+
+    public Integer getMyRatingStars() { return myRatingStars; }
+    public void setMyRatingStars(Integer myRatingStars) { this.myRatingStars = myRatingStars; }
+    public RatingSummary getCounterpartyRating() { return counterpartyRating; }
+    public void setCounterpartyRating(RatingSummary counterpartyRating) { this.counterpartyRating = counterpartyRating; }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

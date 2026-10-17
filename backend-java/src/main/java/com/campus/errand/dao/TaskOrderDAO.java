@@ -1,6 +1,7 @@
 package com.campus.errand.dao;
 
 import com.campus.errand.pojo.TaskOrder;
+import com.campus.errand.pojo.TaskOrderDetail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +24,21 @@ public class TaskOrderDAO {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    public TaskOrder findById(int id) {
+        List<TaskOrder> rows = jdbc.query("SELECT * FROM task_order WHERE id=?",
+                new BeanPropertyRowMapper<>(TaskOrder.class), id);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    public TaskOrderDetail findDetail(int id) {
+        List<TaskOrderDetail> rows = jdbc.query("""
+                SELECT o.*, t.title AS taskTitle, p.username AS publisherName, a.username AS accepterName
+                FROM task_order o JOIN task t ON t.id=o.task_id
+                JOIN user p ON p.id=o.publisher_id JOIN user a ON a.id=o.accepter_id WHERE o.id=?
+                """, new BeanPropertyRowMapper<>(TaskOrderDetail.class), id);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
 
     /**
      * 按任务查接单记录。终止后同一任务可能有多条记录（cancelled + 新的 accepted），

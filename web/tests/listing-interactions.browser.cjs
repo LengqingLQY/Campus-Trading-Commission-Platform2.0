@@ -197,18 +197,19 @@ test("任务：游客可读、登录提示、非参与者无送达/终止入口�
     await noErrors(state);
 });
 
-test("任务原流程：公开详情缺少接单人ID时，真正接单人仍可送达，其他用户无入口；重绘保留评论", async (t) => {
+test("任务流程：后端返回接单身份与订单ID，参与者可送达并进入订单；重绘保留评论", async (t) => {
     const state = fixture();
     state.item.status = "accepted";
     state.user = {id: 8, username: "周同学"};
-    state.acceptedTasks = Array.from({length: 51}, (_, i) => ({id: i === 50 ? 21 : 1000 + i, orderStatus: "accepted"}));
+    Object.assign(state.item, {viewerRole: "accepter", orderId: 31, accepterId: 8});
     const {page} = await openPage(t, "task-detail.jsp?taskId=21", state);
     await commentsReady(page, 23);
     assert.ok(await page.locator("[data-action=deliver]").count());
     await page.locator(".comment-form textarea").fill("打开操作区也不会丢失的评论");
     await page.locator('[data-termination-action="open"]').click();
     assert.equal(await page.locator(".comment-form textarea").inputValue(), "打开操作区也不会丢失的评论");
-    assert.equal(state.requests.filter((r) => r.endpoint === "/me/tasks").length, 2);
+    assert.equal(state.requests.filter((r) => r.endpoint === "/me/tasks").length, 0);
+    assert.match(await page.locator('a[href*="task-order.jsp"]').getAttribute("href"), /orderId=31/);
     await noErrors(state);
     const visitor = fixture();
     visitor.user = {id: 9, username: "其他同学"};

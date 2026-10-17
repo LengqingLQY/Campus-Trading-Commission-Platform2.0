@@ -9,7 +9,6 @@
     const orderId = Number(new URLSearchParams(location.search).get("orderId"));
     let order = null;
     let terminationComposerOpen = false;
-    let ratingSelector = null;
     let selectedStars = null;
 
     const statusNames = {
@@ -154,6 +153,7 @@
                         <li class="${timelineClass(2)}"><i>${timelineIcon(2)}</i><div><strong>买家验货并确认收到</strong><small>${order.finishedAt ? `买家于 ${api.shortTime(order.finishedAt)} 确认完成` : "请当面核对商品情况，确认无误后完成交易"}</small></div></li>
                     </ol>
                     ${actionArea()}
+                    ${R.ratingBadge(order.counterpartyRating, counterpartInfo().counterpartRole)}
                     ${ratingSectionHtml()}
                 </article>
                 <aside class="order-card order-card--contact">
@@ -167,6 +167,7 @@
                         ${terminationFact}
                     </dl>
                     <div class="order-actions">
+                        <a class="secondary-action" href="${api.safePageUrl(new URLSearchParams(location.search).get('returnTo'), 'profile-user.jsp?recordTab=rating-orders')}">返回评价记录</a>
                         <button class="secondary-action" type="button" data-copy-contact>复制联系方式</button>
                         <a class="secondary-action" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${order.productId}`)}">查看商品详情</a>
                         <a class="secondary-action" href="${api.pageUrl("main.jsp")}">返回发现首页</a>
@@ -199,7 +200,6 @@
 
     function ratingSectionHtml() {
         const {name, counterpartRole} = counterpartInfo();
-        const counterpartRating = order.counterpartyRating || null;
         const myStars = order.myRatingStars;
         const completed = order.status === "completed";
 
@@ -224,15 +224,15 @@
         return `<section class="rating-block" data-rating-block>
             <div class="rating-block__title">交易评价</div>
             <div class="rating-block__counterpart"><strong>${api.escapeHtml(name)}</strong> 的${R.roleLabel(counterpartRole)}信誉</div>
-            ${R.ratingBadge(counterpartyRating, counterpartRole)}
             <p class="rating-feedback">交易完成后，你可以为对方评分。</p>
         </section>`;
     }
 
     function mountRating() {
+        selectedStars = null;
         const slot = root.querySelector("[data-rating-selector]");
         if (slot) {
-            ratingSelector = R.mountStarSelector(slot, {
+            R.mountStarSelector(slot, {
                 onSelect(stars) {
                     selectedStars = stars;
                 }
@@ -242,7 +242,8 @@
         if (button) button.addEventListener("click", submitRating);
     }
 
-    async function submitRating(button) {
+    async function submitRating(event) {
+        const button = event.currentTarget;
         const feedback = root.querySelector("[data-rating-feedback]");
         if (selectedStars == null) {
             api.setFeedback(feedback, "请先选择 1～5 星");

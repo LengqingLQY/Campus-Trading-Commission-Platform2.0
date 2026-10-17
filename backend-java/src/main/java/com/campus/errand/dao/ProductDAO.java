@@ -23,11 +23,15 @@ public class ProductDAO {
     @Autowired
     private JdbcTemplate jdbc;
 
+    private static final String RATING = "(SELECT reviewee_id, AVG(stars) AS average, COUNT(*) AS count "
+            + "FROM rating WHERE reviewee_role='seller' GROUP BY reviewee_id)";
+
     public List<Product> findPublic(String keyword, String orderBy, int offset, int size) {
         String p = likePattern(keyword);
         String sql = "SELECT t.id, t.title, t.description, t.category, t.condition, t.price, "
-                + "t.image_urls, t.location, t.status, t.seller_id, t.created_at, u.username AS sellerName "
+                + "t.image_urls, t.location, t.status, t.seller_id, t.created_at, u.username AS sellerName, r.average AS sellerRatingAverage, COALESCE(r.count,0) AS sellerRatingCount "
                 + "FROM v_public_product t JOIN user u ON u.id = t.seller_id "
+                + "LEFT JOIN " + RATING + " r ON r.reviewee_id=t.seller_id "
                 + "WHERE t.status = 'on_sale' "
                 + "AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\') "
                 + "ORDER BY " + orderBy + " LIMIT ? OFFSET ?";
@@ -46,8 +50,9 @@ public class ProductDAO {
     public Product findPublicDetail(int id) {
         String sql = "SELECT t.id, t.title, t.description, t.category, t.condition, t.price, "
                 + "t.image_urls, t.location, t.contact, t.audit_status, t.audit_remark, t.status, t.seller_id, "
-                + "t.created_at, t.updated_at, u.username AS sellerName "
+                + "t.created_at, t.updated_at, u.username AS sellerName, r.average AS sellerRatingAverage, COALESCE(r.count,0) AS sellerRatingCount "
                 + "FROM v_public_product t JOIN user u ON u.id = t.seller_id "
+                + "LEFT JOIN " + RATING + " r ON r.reviewee_id=t.seller_id "
                 + "WHERE t.id = ? AND t.status = 'on_sale'";
         List<Product> list = jdbc.query(sql, new BeanPropertyRowMapper<>(Product.class), id);
         return list.isEmpty() ? null : list.get(0);
@@ -55,8 +60,9 @@ public class ProductDAO {
 
     /** 已售出/已完成商品的详情只在 Service 完成参与者校验后使用。 */
     public Product findFullById(int id) {
-        String sql = "SELECT p.*, u.username AS sellerName "
+        String sql = "SELECT p.*, u.username AS sellerName, r.average AS sellerRatingAverage, COALESCE(r.count,0) AS sellerRatingCount "
                 + "FROM product p JOIN user u ON u.id = p.seller_id "
+                + "LEFT JOIN " + RATING + " r ON r.reviewee_id=p.seller_id "
                 + "WHERE p.id = ? AND p.is_deleted = 0";
         List<Product> list = jdbc.query(sql, new BeanPropertyRowMapper<>(Product.class), id);
         return list.isEmpty() ? null : list.get(0);

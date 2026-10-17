@@ -17,14 +17,14 @@ const products = [
 const tasks = [
     {id: 1, title: "有图任务", imageUrls: " /uploads/task.png , /uploads/task-2.png"},
     {id: 2, title: "无图任务", imageUrls: null}
-].map((item) => ({status: "open", amount: 5, ...item}));
+].map((item) => ({status: "open", amount: 5, pickup: "图书馆", delivery: "宿舍楼", ...item}));
 
 async function renderPage(script) {
     const elements = new Map();
     for (const selector of [
         "[data-recommendations]", "[data-todos]", "[data-todo-count]", "[data-home-feedback]",
         "[data-action='refresh-recommendations']", "[data-product-grid]", "[data-product-count]",
-        "[data-today-count]", "[data-product-search]"
+        "[data-today-count]", "[data-product-search]", "[data-task-grid]", "[data-task-count-label]", "[data-task-count]"
     ]) {
         elements.set(selector, {
             innerHTML: "", textContent: "", listeners: {},
@@ -55,6 +55,7 @@ async function renderPage(script) {
             : endpoint.startsWith("/public/tasks") ? tasks : []
     });
     api.toast = () => {};
+    vm.runInContext(read("js/rating.js"), context, {filename: "rating.js"});
     vm.runInContext(read(`js/${script}`), context, {filename: script});
     for (const callback of readyCallbacks) callback();
     await new Promise(setImmediate);
@@ -82,15 +83,21 @@ async function main() {
     }
     assert.equal(api.firstImageUrl(` , ${imageUrl} , /second.png`), imageUrl);
     const recommendations = home.elements.get("[data-recommendations]");
-    assertCards(recommendations.innerHTML, /<a class="discovery-card[\s\S]*?<\/a>/g);
+    assertCards(recommendations.innerHTML, /<div class="discovery-card discovery-card--[\s\S]*?(?=<div class="discovery-card discovery-card--|$)/g);
     assert.match(recommendations.innerHTML, /class="discovery-card__image"/, "首页必须展示真实缩略图");
     assert.match(recommendations.innerHTML, /src="\/uploads\/task\.png"/, "首页跑腿推荐也应展示上传图片");
-    const noImageTask = [...recommendations.innerHTML.matchAll(/<a class="discovery-card[\s\S]*?<\/a>/g)]
+    const noImageTask = [...recommendations.innerHTML.matchAll(/<div class="discovery-card discovery-card--[\s\S]*?(?=<div class="discovery-card discovery-card--|$)/g)]
         .map((match) => match[0]).find((card) => card.includes("无图任务"));
     assert.ok(noImageTask);
     assert.doesNotMatch(noImageTask, /<img\b/, "无图任务仍显示占位图标");
     home.elements.get("[data-action='refresh-recommendations']").listeners.click();
-    assertCards(recommendations.innerHTML, /<a class="discovery-card[\s\S]*?<\/a>/g);
+    assertCards(recommendations.innerHTML, /<div class="discovery-card discovery-card--[\s\S]*?(?=<div class="discovery-card discovery-card--|$)/g);
+
+    assert.match(noImageTask, /5\.00/, "首页应显示后端 amount 金额");
+    const taskPage = await renderPage("task.js");
+    const taskHtml = taskPage.elements.get("[data-task-grid]").innerHTML;
+    assert.match(taskHtml, /5\.00/, "任务列表应显示后端 amount 金额");
+    assert.match(taskHtml, /图书馆 → 宿舍楼/, "任务列表应保留取送地点");
 
     const market = await renderPage("market.js");
     assertCards(market.elements.get("[data-product-grid]").innerHTML, /<article class="product-card[\s\S]*?<\/article>/g);

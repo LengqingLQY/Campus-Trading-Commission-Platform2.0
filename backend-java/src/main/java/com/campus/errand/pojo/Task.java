@@ -12,6 +12,17 @@ package com.campus.errand.pojo;
  */
 public class Task {
 
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS)
+    private Double publisherRatingAverage;
+    private Long publisherRatingCount;
+
+    public Double getPublisherRatingAverage() { return publisherRatingAverage; }
+    public void setPublisherRatingAverage(Double average) { this.publisherRatingAverage = average; }
+    public Long getPublisherRatingCount() { return publisherRatingCount; }
+    public void setPublisherRatingCount(Long count) { this.publisherRatingCount = count; }
+
+
+
     private Integer id;
     private Integer publisherId;
     private String title;
@@ -34,6 +45,9 @@ public class Task {
     // ---- 展示字段（JOIN 得到，非 task 列） ----
     private String publisherName;
     private Integer orderId;
+    private String viewerRole;
+    public String getViewerRole() { return viewerRole; }
+    public void setViewerRole(String viewerRole) { this.viewerRole = viewerRole; }
     private String orderStatus;
     private Integer accepterId;
     private String accepterName;

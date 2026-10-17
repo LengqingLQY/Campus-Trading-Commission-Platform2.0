@@ -1,4 +1,6 @@
 /* 交易双方评价组件样式 */
+.rating-record-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.rating-record-controls [aria-pressed="true"] { background: #fffbe6; border-color: #faad14; }
 
 /* ===== 只读星星 ===== */
 .rating-stars {

@@ -11,6 +11,17 @@ package com.campus.errand.pojo;
  */
 public class Product {
 
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS)
+    private Double sellerRatingAverage;
+    private Long sellerRatingCount;
+
+    public Double getSellerRatingAverage() { return sellerRatingAverage; }
+    public void setSellerRatingAverage(Double average) { this.sellerRatingAverage = average; }
+    public Long getSellerRatingCount() { return sellerRatingCount; }
+    public void setSellerRatingCount(Long count) { this.sellerRatingCount = count; }
+
+
+
     private Integer id;
     private Integer sellerId;
     private String title;

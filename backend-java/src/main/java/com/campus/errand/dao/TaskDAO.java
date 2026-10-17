@@ -24,6 +24,9 @@ public class TaskDAO {
     @Autowired
     private JdbcTemplate jdbc;
 
+    private static final String RATING = "(SELECT reviewee_id, AVG(stars) AS average, COUNT(*) AS count "
+            + "FROM rating WHERE reviewee_role='buyer' GROUP BY reviewee_id)";
+
     /**
      * 关键词检索 + 排序 + 分页的公开任务列表。
      * orderBy 由调用方从白名单算出，直接拼接（不允许用户输入）。
@@ -31,8 +34,9 @@ public class TaskDAO {
     public List<Task> findPublic(String keyword, String orderBy, int offset, int size) {
         String p = likePattern(keyword);
         String sql = "SELECT t.id, t.title, t.description, t.pickup, t.delivery, t.deadline, t.amount, t.image_urls, "
-                + "t.status, t.publisher_id, t.created_at, u.username AS publisherName "
+                + "t.status, t.publisher_id, t.created_at, u.username AS publisherName, r.average AS publisherRatingAverage, COALESCE(r.count,0) AS publisherRatingCount "
                 + "FROM v_public_task t JOIN user u ON u.id = t.publisher_id "
+                + "LEFT JOIN " + RATING + " r ON r.reviewee_id=t.publisher_id "
                 + "WHERE t.status <> 'completed' "
                 + "AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\') "
                 + "ORDER BY " + orderBy + " LIMIT ? OFFSET ?";
@@ -58,8 +62,9 @@ public class TaskDAO {
     public Task findPublicDetail(int id) {
         String sql = "SELECT t.id, t.title, t.description, t.pickup, t.delivery, t.deadline, t.amount, t.image_urls, "
                 + "t.contact, t.audit_status, t.audit_remark, t.status, t.publisher_id, t.created_at, t.updated_at, "
-                + "u.username AS publisherName "
+                + "u.username AS publisherName, r.average AS publisherRatingAverage, COALESCE(r.count,0) AS publisherRatingCount "
                 + "FROM v_public_task t JOIN user u ON u.id = t.publisher_id "
+                + "LEFT JOIN " + RATING + " r ON r.reviewee_id=t.publisher_id "
                 + "WHERE t.id = ? AND t.status <> 'completed'";
         List<Task> list = jdbc.query(sql, new BeanPropertyRowMapper<>(Task.class), id);
         return list.isEmpty() ? null : list.get(0);
@@ -79,8 +84,9 @@ public class TaskDAO {
      * 用于公开详情接口的权限判断：发布者/管理员可看待审核与已驳回任务。查不到返回 null。
      */
     public Task findFullById(int id) {
-        String sql = "SELECT t.*, u.username AS publisherName "
+        String sql = "SELECT t.*, u.username AS publisherName, r.average AS publisherRatingAverage, COALESCE(r.count,0) AS publisherRatingCount "
                 + "FROM task t LEFT JOIN user u ON u.id = t.publisher_id "
+                + "LEFT JOIN " + RATING + " r ON r.reviewee_id=t.publisher_id "
                 + "WHERE t.id = ? AND t.is_deleted = 0";
         List<Task> list = jdbc.query(sql, new BeanPropertyRowMapper<>(Task.class), id);
         return list.isEmpty() ? null : list.get(0);

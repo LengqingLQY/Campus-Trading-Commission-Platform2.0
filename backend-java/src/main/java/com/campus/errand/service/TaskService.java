@@ -74,11 +74,9 @@ public class TaskService {
         Integer currentUserId = user == null ? null : user.getId();
         boolean isAdmin = user != null && "admin".equals(user.getRole());
         boolean isOwner = currentUserId != null && currentUserId.equals(task.getPublisherId());
-        boolean isAccepter = false;
-        if (currentUserId != null && !isOwner && "completed".equals(task.getStatus())) {
-            TaskOrder order = taskOrderDAO.findByTaskId(id);
-            isAccepter = order != null && currentUserId.equals(order.getAccepterId());
-        }
+        TaskOrder order = currentUserId == null ? null : taskOrderDAO.findByTaskId(id);
+        boolean isAccepter = order != null && !"cancelled".equals(order.getStatus())
+                && currentUserId.equals(order.getAccepterId());
 
         if ("completed".equals(task.getStatus()) && !isOwner && !isAccepter && !isAdmin) {
             throw new BizException(404, "任务不存在或已删除");
@@ -95,6 +93,7 @@ public class TaskService {
             throw new BizException(404, "任务不存在或已删除");
         }
         task.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(id));
+        attachOrder(task, order, currentUserId);
         return task;
     }
 
@@ -111,7 +110,17 @@ public class TaskService {
             throw new BizException(403, "无权限查看该任务");
         }
         task.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(taskId));
+        attachOrder(task, taskOrderDAO.findByTaskId(taskId), userId);
         return task;
+    }
+
+    private void attachOrder(Task task, TaskOrder order, Integer userId) {
+        if (order == null || userId == null || "cancelled".equals(order.getStatus())) return;
+        if (userId.equals(order.getPublisherId()) || userId.equals(order.getAccepterId())) {
+            task.setOrderId(order.getId());
+            task.setAccepterId(order.getAccepterId());
+            task.setViewerRole(userId.equals(order.getPublisherId()) ? "publisher" : "accepter");
+        }
     }
 
     /**

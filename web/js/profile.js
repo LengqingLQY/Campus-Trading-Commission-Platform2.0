@@ -26,6 +26,9 @@
     var recordTabs = new Set(["published-tasks", "published-products", "accepted", "bought", "rating-orders"]);
     var requestedTab = new URLSearchParams(location.search).get("recordTab");
     var currentTab = recordTabs.has(requestedTab) ? requestedTab : "published-tasks";
+    var ratingParams = new URLSearchParams(location.search);
+    var ratingState = ratingParams.get("ratingState") === "pending" ? "pending" : "all";
+    var ratingPage = Number(ratingParams.get("ratingPage") || 1);
     var userData = null;
 
     function profileReturnPath(type) {
@@ -443,17 +446,25 @@
     // ===== 待评价 / 评价记录 =====
     async function loadRatingOrders() {
         var list = document.querySelector("[data-record-list]");
+        var nextUrl = new URL(location.href);
+        nextUrl.searchParams.set("ratingState", ratingState);
+        nextUrl.searchParams.set("ratingPage", ratingPage);
+        history.replaceState(null, "", nextUrl);
         list.innerHTML = '<div class="loading-state"><span class="button-spinner"></span><p>正在加载评价记录...</p></div>';
         try {
-            var data = await api.request("/me/rating-orders" + api.query({ state: "all" }));
-            var items = data.list || [];
-            if (!items.length) {
-                list.innerHTML = '<div class="empty-state"><h3>暂无可评价或已评价的订单</h3></div>';
-                return;
+            var data = await api.request("/me/rating-orders" + api.query({ state: ratingState, page: ratingPage, size: 20 }));
+            if (currentTab !== "rating-orders") return;
+            var totalPages = Math.max(1, Math.ceil(data.total / 20));
+            // 完成末页最后一笔待评价订单后，返回仍有记录的最后一页。
+            if (ratingPage > totalPages) {
+                ratingPage = totalPages;
+                return loadRatingOrders();
             }
+            var items = data.list || [];
             var html = items.map(function(item) {
                 var isTask = item.kind === "task";
-                var orderUrl = (isTask ? "task-order.jsp" : "product-order.jsp") + "?orderId=" + item.orderId;
+                var orderUrl = (isTask ? "task-order.jsp" : "product-order.jsp") + "?orderId=" + item.orderId
+                    + "&returnTo=" + encodeURIComponent("profile-user.jsp" + nextUrl.search);
                 var roleText = item.counterpartRole
                     ? (" · " + (item.counterpartRole === "buyer" ? "买方／需求方" : "卖方／服务方"))
                     : "";
@@ -480,7 +491,27 @@
                     '</div>' +
                     '</div>';
             }).join("");
-            list.innerHTML = html || '<div class="empty-state"><h3>暂无记录</h3></div>';
+            list.innerHTML = '<div class="rating-record-controls">' +
+                '<button type="button" class="secondary-action" data-rating-state="pending" aria-pressed="' + (ratingState === "pending") + '">待评价</button>' +
+                '<button type="button" class="secondary-action" data-rating-state="all" aria-pressed="' + (ratingState === "all") + '">全部评价记录</button></div>' +
+                (html || '<div class="empty-state"><h3>暂无记录</h3></div>') +
+                '<div class="rating-record-controls">' +
+                '<button type="button" class="secondary-action" data-rating-page="' + (ratingPage - 1) + '" ' + (ratingPage <= 1 ? "disabled" : "") + '>上一页</button>' +
+                '<span>第 ' + ratingPage + ' / ' + totalPages + ' 页，共 ' + data.total + ' 条</span>' +
+                '<button type="button" class="secondary-action" data-rating-page="' + (ratingPage + 1) + '" ' + (ratingPage >= totalPages ? "disabled" : "") + '>下一页</button></div>';
+            list.querySelectorAll("[data-rating-state]").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    ratingState = this.dataset.ratingState;
+                    ratingPage = 1;
+                    loadRatingOrders();
+                });
+            });
+            list.querySelectorAll("[data-rating-page]").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    ratingPage = Number(this.dataset.ratingPage);
+                    loadRatingOrders();
+                });
+            });
         } catch (error) {
             list.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(error.message) + '</p></div>';
         }

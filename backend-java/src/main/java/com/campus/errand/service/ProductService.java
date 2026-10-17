@@ -25,6 +25,9 @@ import java.util.Set;
 @Service
 public class ProductService {
 
+    @Autowired
+    private RatingService ratingService;
+
     /** 排序白名单（设计说明书 §3.7）。 */
     private static final Map<String, String> PRODUCT_ORDER = Map.of(
             "time_desc",  "t.created_at DESC",
@@ -228,6 +231,7 @@ public class ProductService {
             throw new BizException(403, "无权限查看该订单");
         }
         detail.setTerminationRequest(terminationRequestDAO.findPendingByOrderId(orderId));
+        ratingService.enrichProductOrder(detail, currentUserId);
         return detail;
     }
 

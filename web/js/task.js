@@ -52,11 +52,11 @@
             '        <h3><a class="product-card__link stretched-link" href="' + api.pageUrlWithReturn("task-detail.jsp?taskId=" + item.id) + '">' + api.escapeHtml(item.title) + '</a></h3>\n' +
             '        <p class="product-description">' + api.escapeHtml(item.description || "暂无任务说明") + '</p>\n' +
             '        <div class="product-meta">\n' +
-            '            <span>⌖ ' + api.escapeHtml(item.location || "地点待定") + '</span>\n' +
+            '            <span>⌖ ' + api.escapeHtml(item.pickup || "待定") + " → " + api.escapeHtml(item.delivery || "待定") + '</span>\n' +
             '            <span>' + (item.deadline ? "截止 " + api.shortTime(item.deadline) : "时间待定") + '</span>\n' +
             '        </div>\n' +
             '        <div class="product-footer">\n' +
-            '            <div class="product-price"><small>￥</small><strong>' + api.money(item.reward) + '</strong></div>\n' +
+            '            <div class="product-price"><small>￥</small><strong>' + api.money(item.amount) + '</strong></div>\n' +
             '            <span class="seller-name">' + publisherLink + ' 发布 ' + publisherBadge + '</span>\n' +
             '        </div>\n' +
             '    </div>\n' +

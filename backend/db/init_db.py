@@ -42,6 +42,7 @@ DEFAULT_DB_PATH = os.path.join(BASE_DIR, "app.db")
 
 # 建表顺序的倒序，先删子表再删父表。
 DROP_ORDER = [
+    "rating",
     "comment",
     "product_order_termination_request",
     "task_termination_request",
