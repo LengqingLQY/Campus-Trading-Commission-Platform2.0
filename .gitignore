@@ -44,8 +44,14 @@ target/
 *.sqlite
 *.sqlite3
 
-# 图片/头像上传目录（运行时生成，不入库）
-uploads/
+# 运行时上传文件不入库；演示商品图片随仓库保存
+/uploads/*
+!/uploads/demo/
+/uploads/demo/*
+!/uploads/demo/product-*.jpg
+!/uploads/demo/product-*.jpeg
+!/uploads/demo/product-*.png
+!/uploads/demo/demo-image-sources.csv
 
 # Python
 __pycache__/
