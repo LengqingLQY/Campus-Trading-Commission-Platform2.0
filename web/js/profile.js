@@ -35,6 +35,21 @@
         return "profile-user.jsp?recordTab=" + encodeURIComponent(type) + "#profile-records";
     }
 
+    // 来自消息中心时，在记录区顶部补充「返回消息中心」入口（设计书 §4.3）。
+    function injectMessageReturn() {
+        var raw = new URLSearchParams(location.search).get("returnTo");
+        if (!raw || raw.indexOf("message-center.jsp") === -1) return;
+        var records = document.getElementById("profile-records");
+        if (!records || records.querySelector(".profile-return-message")) return;
+        var link = document.createElement("a");
+        link.className = "secondary-action profile-return-message";
+        link.href = api.safePageUrl(raw, "message-center.jsp");
+        link.textContent = "← 返回消息中心";
+        link.style.display = "inline-block";
+        link.style.marginBottom = "12px";
+        records.insertBefore(link, records.firstChild);
+    }
+
     // 发布记录信息区：approved 链详情并显示业务状态；pending/rejected 显示审核状态且不可点击（详情对未审核内容 404）。
     function publishedInfo(item, type, kind) {
         var detail = kind === "task" ? "task-detail.jsp?taskId=" + item.id : "product-detail.jsp?productId=" + item.id;
@@ -537,6 +552,7 @@
     async function init() {
         try {
             await loadProfile();
+            injectMessageReturn();
             document.querySelector("[data-profile-loading]").style.display = "none";
             document.querySelector("[data-profile-content]").style.display = "block";
 

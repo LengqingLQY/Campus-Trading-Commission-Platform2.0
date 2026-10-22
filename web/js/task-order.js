@@ -24,6 +24,15 @@
         return {name, counterpartRole};
     }
 
+    // 来源为消息中心时显示「返回消息中心」，否则沿用「返回评价记录」（沿用现有 returnTo 机制）。
+    function returnLinkHtml() {
+        const raw = new URLSearchParams(location.search).get("returnTo");
+        const fromMessages = raw && raw.indexOf("message-center.jsp") !== -1;
+        const href = api.safePageUrl(raw, fromMessages ? "message-center.jsp" : "profile-user.jsp?recordTab=rating-orders");
+        const label = fromMessages ? "返回消息中心" : "返回评价记录";
+        return `<a class="secondary-action" href="${href}">${label}</a>`;
+    }
+
     function ratingSectionHtml() {
         const {name, counterpartRole} = counterpartInfo();
         const myStars = order.myRatingStars;
@@ -92,8 +101,9 @@
                         <div><dt>订单状态</dt><dd>${statusNames[order.status] || api.escapeHtml(order.status)}</dd></div>
                     </dl>
                     <div class="order-actions">
-                        <a class="secondary-action" href="${api.safePageUrl(new URLSearchParams(location.search).get('returnTo'), 'profile-user.jsp?recordTab=rating-orders')}">返回评价记录</a>
+                        ${returnLinkHtml()}
                         <a class="secondary-action" href="${api.pageUrl("task-hall.jsp")}">返回任务列表</a>
+                        ${(order.status === "accepted" || order.status === "delivered") ? `<a class="secondary-action" href="${api.pageUrl("task-detail.jsp?taskId=" + order.taskId)}">进入任务处理</a>` : ""}
                     </div>
                 </aside>
             </section>`;

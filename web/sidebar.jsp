@@ -46,6 +46,13 @@
                 </a>
             </li>
             <li>
+                <a class="nav-link nav-link--messages" href="message-center.jsp" data-nav-page="messages">
+                    <span class="nav-icon" aria-hidden="true">✉</span>
+                    <span>消息中心</span>
+                    <span class="nav-badge" id="nav-unread-badge" hidden></span>
+                </a>
+            </li>
+            <li>
                 <a class="nav-link nav-link--profile" href="profile-user.jsp" data-nav-page="profile">
                     <span class="nav-icon" aria-hidden="true">☻</span>
                     <span>个人空间</span>
@@ -72,3 +79,4 @@
     </div>
 </aside>
 <script src="js/sidebar.js?v=20260909-1733"></script>
+<script src="js/notifications.js"></script>

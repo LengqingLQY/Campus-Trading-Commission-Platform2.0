@@ -1,0 +1,186 @@
+/* message-center.css — 消息中心样式，沿用侧边栏 / 表单控件风格（设计书 §8） */
+
+.message-workspace { max-width: 920px; }
+
+.message-topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.message-unread-hint {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6f8685;
+}
+.message-topbar__actions .primary-action {
+    background: var(--teal, #2f7270);
+    border: none;
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.message-topbar__actions .primary-action:disabled {
+    background: #9fb0b0;
+    cursor: not-allowed;
+}
+
+/* 工具栏 */
+.msg-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.msg-filter-group {
+    display: inline-flex;
+    gap: 6px;
+    background: #f1f7f5;
+    padding: 5px;
+    border-radius: 12px;
+}
+.msg-filter {
+    border: none;
+    background: transparent;
+    color: #6f8685;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.msg-filter:hover { color: #2f7270; }
+.msg-filter.is-active {
+    background: #ffffff;
+    color: #2f7270;
+    box-shadow: 0 2px 8px rgba(47, 114, 112, .12);
+}
+
+/* 新消息提示 */
+.msg-new-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    background: #eaf8f5;
+    border: 1px solid #cdeae3;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2f7270;
+}
+.msg-new-banner .secondary-action {
+    margin-left: auto;
+    padding: 5px 12px;
+    font-size: 11px;
+}
+
+/* 列表 */
+.msg-list { display: flex; flex-direction: column; gap: 12px; }
+
+.msg-item {
+    background: #ffffff;
+    border: 1px solid rgba(47, 114, 112, .08);
+    border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 22px rgba(47, 114, 112, .05);
+}
+.msg-item--unread {
+    border-color: #91d8ca;
+    background: #f7fdfc;
+}
+.msg-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.msg-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff7a59;
+    flex-shrink: 0;
+}
+.msg-cat {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 7px;
+    background: #eef2f2;
+    color: #577779;
+}
+.msg-cat--audit { background: #fff4e0; color: #a9762b; }
+.msg-cat--order { background: #e9f8f5; color: #2f7270; }
+.msg-cat--termination { background: #ffeef0; color: #c0564d; }
+
+.msg-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #2b3f3f;
+}
+.msg-time {
+    margin-left: auto;
+    font-size: 11px;
+    color: #9aabad;
+}
+.msg-content {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.75;
+    color: #5d7472;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.msg-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+.msg-actions .msg-action {
+    text-decoration: none;
+    font-size: 11px;
+    padding: 7px 13px;
+    border-radius: 9px;
+    background: #f1f7f5;
+    color: #2f7270;
+    font-weight: 700;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.msg-actions .msg-action:hover {
+    border-color: #91d8ca;
+}
+
+/* 分页 */
+.msg-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 20px;
+}
+.msg-page-info { font-size: 11px; color: #6f8685; }
+
+/* 侧边栏未读角标 */
+.nav-badge {
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #ff7a59;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.nav-badge[hidden] { display: none; }

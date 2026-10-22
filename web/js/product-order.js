@@ -167,7 +167,7 @@
                         ${terminationFact}
                     </dl>
                     <div class="order-actions">
-                        <a class="secondary-action" href="${api.safePageUrl(new URLSearchParams(location.search).get('returnTo'), 'profile-user.jsp?recordTab=rating-orders')}">返回评价记录</a>
+                        ${messageReturnHtml()}
                         <button class="secondary-action" type="button" data-copy-contact>复制联系方式</button>
                         <a class="secondary-action" href="${api.pageUrlWithReturn(`product-detail.jsp?productId=${order.productId}`)}">查看商品详情</a>
                         <a class="secondary-action" href="${api.pageUrl("main.jsp")}">返回发现首页</a>
@@ -196,6 +196,15 @@
         const name = role === "buyer" ? (order.sellerName || "校园同学") : (order.buyerName || "校园同学");
         const counterpartRole = role === "buyer" ? "seller" : "buyer";
         return {name, counterpartRole};
+    }
+
+    // 来源为消息中心时显示「返回消息中心」，否则沿用「返回评价记录」（沿用现有 returnTo 机制）。
+    function messageReturnHtml() {
+        const raw = new URLSearchParams(location.search).get("returnTo");
+        const fromMessages = raw && raw.indexOf("message-center.jsp") !== -1;
+        const href = api.safePageUrl(raw, fromMessages ? "message-center.jsp" : "profile-user.jsp?recordTab=rating-orders");
+        const label = fromMessages ? "返回消息中心" : "返回评价记录";
+        return '<a class="secondary-action" href="' + href + '">' + label + '</a>';
     }
 
     function ratingSectionHtml() {
