@@ -13,8 +13,10 @@ import com.campus.errand.util.PasswordUtil;
 import com.campus.errand.util.PhoneValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -25,6 +27,9 @@ import java.util.Set;
  */
 @Service
 public class AdminService {
+
+    @Autowired
+    private NotificationService notificationService;
 
     private static final Set<String> AUDIT_STATUSES = Set.of("pending", "approved", "rejected");
 
@@ -56,15 +61,23 @@ public class AdminService {
                 page, size);
     }
 
+    @Transactional
     public void auditTask(int id, AdminAuditDTO dto) {
         if (dto == null || dto.getApprove() == null) {
             throw new BizException(400, "approve 不能为空");
         }
         boolean approve = dto.getApprove();
         String remark = approve ? null : normalizeRejectRemark(dto.getRemark());
+        Task task = taskDAO.findById(id);
+        if (task == null || Integer.valueOf(1).equals(task.getIsDeleted())) {
+            throw new BizException(404, "任务不存在或已删除");
+        }
+        if (Objects.equals(task.getAuditStatus(), approve ? "approved" : "rejected")
+                && Objects.equals(task.getAuditRemark(), remark)) return;
         if (taskDAO.audit(id, approve ? "approved" : "rejected", remark) == 0) {
             throw new BizException(404, "任务不存在或已删除");
         }
+        notificationService.audit(task.getPublisherId(), false, id, task.getTitle(), approve, remark);
     }
 
     public void deleteTask(int id, int adminId) {
@@ -91,15 +104,23 @@ public class AdminService {
                 page, size);
     }
 
+    @Transactional
     public void auditProduct(int id, AdminAuditDTO dto) {
         if (dto == null || dto.getApprove() == null) {
             throw new BizException(400, "approve 不能为空");
         }
         boolean approve = dto.getApprove();
         String remark = approve ? null : normalizeRejectRemark(dto.getRemark());
+        Product product = productDAO.findById(id);
+        if (product == null || Integer.valueOf(1).equals(product.getIsDeleted())) {
+            throw new BizException(404, "商品不存在或已删除");
+        }
+        if (Objects.equals(product.getAuditStatus(), approve ? "approved" : "rejected")
+                && Objects.equals(product.getAuditRemark(), remark)) return;
         if (productDAO.audit(id, approve ? "approved" : "rejected", remark) == 0) {
             throw new BizException(404, "商品不存在或已删除");
         }
+        notificationService.audit(product.getSellerId(), true, id, product.getTitle(), approve, remark);
     }
 
     public void deleteProduct(int id, int adminId) {

@@ -386,7 +386,7 @@
             render();
         } catch (error) {
             if (error.status !== 401) {
-                root.innerHTML = `<div class="empty-state empty-state--error"><span>!</span><h3>交易信息加载失败</h3><p>${api.escapeHtml(error.message)}</p><a href="${api.pageUrl("main.jsp")}">返回首页</a></div>`;
+                root.innerHTML = `<div class="empty-state empty-state--error"><span>!</span><h3>交易信息加载失败</h3><p>${api.escapeHtml(error.message)}</p>${messageReturnHtml()}<a href="${api.pageUrl("main.jsp")}">返回首页</a></div>`;
             }
         }
     }

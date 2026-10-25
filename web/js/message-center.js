@@ -21,8 +21,15 @@
         filterState: new URLSearchParams(location.search).get("state") || "all",
         page: Number(new URLSearchParams(location.search).get("page") || 1) || 1,
         total: 0,
-        loading: false
+        loading: false,
+        markingAll: false,
+        latestId: 0
     };
+    if (!["all", "audit", "order", "termination"].includes(state.category)) state.category = "all";
+    if (!["all", "unread"].includes(state.filterState)) state.filterState = "all";
+    if (!Number.isSafeInteger(state.page) || state.page < 1 || state.page > 2147483647) state.page = 1;
+    let requestId = 0;
+    let hasLoaded = false;
     let lastSeenLatest = N ? N.state.latestId : 0;
 
     const categoryNames = { audit: "审核", order: "订单", termination: "终止申请", all: "全部" };
@@ -76,8 +83,16 @@
     }
 
     function renderToolbar() {
-        root.querySelectorAll("[data-category]").forEach((b) => b.classList.toggle("is-active", b.dataset.category === state.category));
-        root.querySelectorAll("[data-state]").forEach((b) => b.classList.toggle("is-active", b.dataset.state === state.filterState));
+        root.querySelectorAll("[data-category]").forEach((b) => {
+            const active = b.dataset.category === state.category;
+            b.classList.toggle("is-active", active);
+            b.setAttribute("aria-pressed", String(active));
+        });
+        root.querySelectorAll("[data-state]").forEach((b) => {
+            const active = b.dataset.state === state.filterState;
+            b.classList.toggle("is-active", active);
+            b.setAttribute("aria-pressed", String(active));
+        });
     }
 
     function renderPagination() {
@@ -99,18 +114,20 @@
             e.preventDefault();
             markRead(Number(b.dataset.mark), b);
         }));
-        listEl.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", (e) => {
+        listEl.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", async (e) => {
             e.preventDefault();
             const id = Number(a.dataset.id);
             const href = a.getAttribute("href");
             const item = a.closest(".msg-item");
             // 未读消息：先标已读，成功后再跳转；失败保留当前页并提示重试。
             if (item && item.classList.contains("msg-item--unread")) {
-                N.markRead(id).then(() => {
-                    N.refresh();
-                    lastSeenLatest = N.state.latestId;
+                try {
+                    await N.markRead(id);
+                    await N.refresh();
                     location.href = href;
-                }).catch(() => api.toast("消息已读失败，请重试", "error"));
+                } catch (error) {
+                    api.toast("消息已读失败，请重试", "error");
+                }
             } else {
                 location.href = href;
             }
@@ -132,51 +149,69 @@
     }
 
     async function markRead(id, btn) {
+        btn.disabled = true;
         try {
             await N.markRead(id);
-            const item = btn.closest(".msg-item");
-            if (item) item.classList.remove("msg-item--unread");
-            btn.remove();
             await N.refresh();
-            lastSeenLatest = N.state.latestId;
-            if (state.filterState === "unread") load(); // 仅未读视图下，已读后刷新当前页
+            await load();
         } catch (e) {
             api.toast("标记已读失败：" + (e.message || "请重试"), "error");
+        } finally {
+            btn.disabled = false;
         }
     }
 
     async function load() {
-        if (state.loading) return;
+        const currentRequest = ++requestId;
         state.loading = true;
-        if (newBanner && !newBanner.hidden) newBanner.hidden = true;
+        if (markAllBtn) markAllBtn.disabled = true;
+        paginationEl.innerHTML = "";
         listEl.innerHTML = '<div class="loading-state"><span class="button-spinner"></span><p>正在加载消息...</p></div>';
         try {
+            await api.requireUser();
             const data = await api.request("/me/notifications" + api.query({
                 category: state.category, state: state.filterState, page: state.page, size: PAGE_SIZE
             }));
+            if (currentRequest !== requestId) return;
+            const lastPage = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+            if (state.page > lastPage) {
+                state.page = lastPage;
+                syncUrl();
+                return await load();
+            }
+            state.latestId = data.latestId;
+            lastSeenLatest = data.latestId;
+            hasLoaded = true;
+            newBanner.hidden = true;
+            N.setCounts(data);
             renderList(data);
         } catch (e) {
+            if (currentRequest !== requestId || e.status === 401) return;
             listEl.innerHTML = '<div class="empty-state empty-state--error"><span>!</span><h3>加载失败</h3><p>' + api.escapeHtml(e.message) + '</p><button type="button" class="secondary-action" data-retry>重试</button></div>';
             const r = listEl.querySelector("[data-retry]");
             if (r) r.addEventListener("click", load);
         } finally {
-            state.loading = false;
+            if (currentRequest === requestId) {
+                state.loading = false;
+                if (markAllBtn) markAllBtn.disabled = !hasLoaded || state.markingAll;
+            }
         }
     }
 
     // 顶部“全部已读”：作用于当前用户所有分类，提交期间禁用按钮。
     if (markAllBtn) markAllBtn.addEventListener("click", async () => {
+        state.markingAll = true;
         markAllBtn.disabled = true;
         try {
-            const res = await N.markAll(N.state.latestId);
+            const res = await N.markAll(state.latestId);
             api.toast("已将 " + ((res && res.updatedCount) || 0) + " 条消息标为已读", "success");
             await N.refresh();
-            lastSeenLatest = N.state.latestId;
             await load();
         } catch (e) {
             api.toast("操作失败：" + (e.message || "请重试"), "error");
         } finally {
-            markAllBtn.disabled = false;
+            state.markingAll = false;
+            markAllBtn.disabled = !hasLoaded || state.loading;
         }
     });
 
@@ -190,7 +225,8 @@
 
     // 全局未读变化时，若发现新消息则提示刷新（不自动移动当前列表）。
     if (N && N.onUnread) N.onUnread((cur) => {
-        if (cur.latestId > lastSeenLatest) newBanner.hidden = false;
+        if (hasLoaded && cur.latestId > lastSeenLatest) newBanner.hidden = false;
+        if (unreadHint) unreadHint.textContent = cur.unreadCount ? "未读 " + cur.unreadCount + " 条" : "全部已读";
     });
     if (newBanner) newBanner.querySelector("[data-refresh]").addEventListener("click", () => {
         newBanner.hidden = true; load();

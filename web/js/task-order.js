@@ -103,7 +103,7 @@
                     <div class="order-actions">
                         ${returnLinkHtml()}
                         <a class="secondary-action" href="${api.pageUrl("task-hall.jsp")}">返回任务列表</a>
-                        ${(order.status === "accepted" || order.status === "delivered") ? `<a class="secondary-action" href="${api.pageUrl("task-detail.jsp?taskId=" + order.taskId)}">进入任务处理</a>` : ""}
+                        ${(order.status === "accepted" || order.status === "delivered") ? `<a class="secondary-action" href="${api.escapeHtml(api.pageUrlWithReturn("task-detail.jsp?taskId=" + order.taskId))}">进入任务处理</a>` : ""}
                     </div>
                 </aside>
             </section>`;
@@ -155,7 +155,7 @@
             render();
         } catch (error) {
             if (error.status !== 401) {
-                root.innerHTML = `<div class="empty-state empty-state--error"><span>!</span><h3>订单加载失败</h3><p>${api.escapeHtml(error.message)}</p><a href="${api.pageUrl("task-hall.jsp")}">返回任务列表</a></div>`;
+                root.innerHTML = `<div class="empty-state empty-state--error"><span>!</span><h3>订单加载失败</h3><p>${api.escapeHtml(error.message)}</p>${returnLinkHtml()}<a href="${api.pageUrl("task-hall.jsp")}">返回任务列表</a></div>`;
             }
         }
     }

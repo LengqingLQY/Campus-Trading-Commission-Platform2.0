@@ -121,11 +121,11 @@ public class TaskDAO {
     /**
      * 接取任务：状态判断写入 WHERE，返回受影响行数（0 = 已被接取 / 不可接）。
      */
-    public int accept(int taskId) {
+    public int accept(int taskId, int accepterId) {
         return jdbc.update(
                 "UPDATE task SET status='accepted', updated_at=datetime('now','localtime') "
-              + "WHERE id=? AND status='open' AND audit_status='approved' AND is_deleted=0",
-                taskId);
+              + "WHERE id=? AND publisher_id<>? AND status='open' AND audit_status='approved' AND is_deleted=0",
+                taskId, accepterId);
     }
 
     /**

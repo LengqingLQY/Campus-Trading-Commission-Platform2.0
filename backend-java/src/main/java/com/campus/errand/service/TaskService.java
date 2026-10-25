@@ -25,6 +25,9 @@ import java.util.Map;
 @Service
 public class TaskService {
 
+    @Autowired
+    private NotificationService notificationService;
+
     /** 排序白名单：非法值按默认 time_desc 处理（设计说明书 §5.3）。 */
     private static final Map<String, String> TASK_ORDER = Map.of(
             "time_desc",   "t.created_at DESC",
@@ -92,7 +95,7 @@ public class TaskService {
             // 待审核/已驳回：仅发布者或管理员可见
             throw new BizException(404, "任务不存在或已删除");
         }
-        task.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(id));
+        if (isOwner || isAccepter) task.setTerminationRequest(taskTerminationRequestDAO.findPendingByTaskId(id));
         attachOrder(task, order, currentUserId);
         return task;
     }
@@ -153,6 +156,7 @@ public class TaskService {
      */
     @Transactional
     public int acceptTask(int taskId, int currentUserId) {
+        int rows = taskDAO.accept(taskId, currentUserId);
         Task task = taskDAO.findById(taskId);
         if (task == null || (task.getIsDeleted() != null && task.getIsDeleted() == 1)
                 || !"approved".equals(task.getAuditStatus())) {
@@ -162,11 +166,12 @@ public class TaskService {
             throw new BizException(403, "不能接取自己发布的任务");
         }
 
-        int rows = taskDAO.accept(taskId);
         if (rows == 0) {
             throw new BizException(409, "任务已被接取");
         }
-        return taskOrderDAO.insert(taskId, task.getPublisherId(), currentUserId);
+        int orderId = taskOrderDAO.insert(taskId, task.getPublisherId(), currentUserId);
+        notificationService.order(task.getPublisherId(), false, orderId, task.getTitle(), "order_created", "任务已被接取", "任务已被接取，可查看本次订单。");
+        return orderId;
     }
 
     /**
@@ -186,12 +191,18 @@ public class TaskService {
         if (order.getAccepterId() == null || order.getAccepterId() != currentUserId) {
             throw new BizException(403, "只有接单方可以标记送达");
         }
+        if (taskTerminationRequestDAO.hasPending(taskId)) {
+            throw new BizException(409, "有待处理的终止申请，不能标记送达");
+        }
 
         int rows = taskOrderDAO.markDelivered(taskId, currentUserId);
         if (rows == 0) {
             throw new BizException(409, "当前状态不允许该操作");
         }
-        taskDAO.markDelivered(taskId);
+        if (taskDAO.markDelivered(taskId) == 0) {
+            throw new BizException(409, "任务状态已变化，请刷新后重试");
+        }
+        notificationService.order(task.getPublisherId(), false, order.getId(), task.getTitle(), "order_delivered", "任务已送达", "任务已送达，请核对后确认完成。");
     }
 
     /**
@@ -207,15 +218,23 @@ public class TaskService {
         if (task.getPublisherId() == null || task.getPublisherId() != currentUserId) {
             throw new BizException(403, "只有发布者可以确认完成");
         }
-        if (taskOrderDAO.findByTaskId(taskId) == null) {
+        TaskOrder order = taskOrderDAO.findByTaskId(taskId);
+        if (order == null) {
             throw new BizException(409, "任务尚未被接取");
+        }
+        if (taskTerminationRequestDAO.hasPending(taskId)) {
+            throw new BizException(409, "有待处理的终止申请，不能确认完成");
         }
 
         int rows = taskOrderDAO.markCompleted(taskId, currentUserId);
         if (rows == 0) {
             throw new BizException(409, "当前状态不允许该操作");
         }
-        taskDAO.markCompleted(taskId);
+        if (taskDAO.markCompleted(taskId) == 0) {
+            throw new BizException(409, "任务状态已变化，请刷新后重试");
+        }
+        notificationService.order(order.getPublisherId(), false, order.getId(), task.getTitle(), "order_completed", "跑腿已完成", "跑腿已完成，你可以为对方评价。");
+        notificationService.order(order.getAccepterId(), false, order.getId(), task.getTitle(), "order_completed", "跑腿已完成", "跑腿已完成，你可以为对方评价。");
     }
 
     /**
@@ -297,6 +316,7 @@ public class TaskService {
      * 发起终止申请（增量契约：跑腿任务删除与双向终止 §5.4）。
      * 仅 accepted/delivered 可发起，同一任务最多一条 pending 申请。
      */
+    @Transactional
     public int createTerminationRequest(int taskId, int currentUserId, String reason) {
         String trimmed = reason == null ? "" : reason.trim();
         if (trimmed.length() < 2 || trimmed.length() > 200) {
@@ -310,12 +330,17 @@ public class TaskService {
         if (taskTerminationRequestDAO.hasPending(taskId)) {
             throw new BizException(409, "已有待处理的终止申请");
         }
-        return taskTerminationRequestDAO.insert(taskId, currentUserId, trimmed);
+        int requestId = taskTerminationRequestDAO.insert(taskId, currentUserId, trimmed);
+        TaskOrder order = taskOrderDAO.findByTaskId(taskId);
+        notifyTermination(task, order, otherParty(order, currentUserId), "termination_requested", "对方申请终止跑腿",
+                "对方申请终止，请进入任务处理。原因：" + trimmed);
+        return requestId;
     }
 
     /**
      * 发起方撤回终止申请（§5.5）：仅发起方可操作，pending -> withdrawn。
      */
+    @Transactional
     public void withdrawTerminationRequest(int taskId, int currentUserId) {
         Task task = requireTask(taskId);
         requireParticipant(task, currentUserId);
@@ -326,11 +351,14 @@ public class TaskService {
         if (taskTerminationRequestDAO.markWithdrawn(request.getId(), currentUserId) == 0) {
             throw new BizException(409, "任务状态已变化，请刷新后重试");
         }
+        TaskOrder order = taskOrderDAO.findByTaskId(taskId);
+        notifyTermination(task, order, otherParty(order, currentUserId), "termination_withdrawn", "对方已撤回终止申请", "对方已撤回申请，请查看订单当前进度。");
     }
 
     /**
      * 另一方拒绝终止申请（§5.6）：仅非发起方可操作，pending -> rejected。
      */
+    @Transactional
     public void rejectTerminationRequest(int taskId, int currentUserId) {
         Task task = requireTask(taskId);
         requireParticipant(task, currentUserId);
@@ -341,6 +369,7 @@ public class TaskService {
         if (taskTerminationRequestDAO.markResolved(request.getId(), currentUserId, "rejected") == 0) {
             throw new BizException(409, "任务状态已变化，请刷新后重试");
         }
+        notifyTermination(task, taskOrderDAO.findByTaskId(taskId), request.getRequesterId(), "termination_rejected", "对方拒绝终止跑腿", "对方拒绝终止，请查看订单当前进度。");
     }
 
     /**
@@ -370,11 +399,21 @@ public class TaskService {
             throw new BizException(409, "任务状态已变化，请刷新后重试");
         }
 
+        notifyTermination(task, order, request.getRequesterId(), "termination_approved", "对方同意终止跑腿", "对方同意终止，本次订单已终止。");
+
         return Map.of(
                 "taskId", taskId,
                 "taskStatus", "open",
                 "orderId", order.getId(),
                 "orderStatus", "cancelled");
+    }
+
+    private int otherParty(TaskOrder order, int userId) {
+        return order.getPublisherId() == userId ? order.getAccepterId() : order.getPublisherId();
+    }
+
+    private void notifyTermination(Task task, TaskOrder order, int recipientId, String type, String title, String action) {
+        notificationService.order(recipientId, false, order.getId(), task.getTitle(), type, title, action);
     }
 
     /** 按 id 查任务，不存在或已软删除返回 404。 */

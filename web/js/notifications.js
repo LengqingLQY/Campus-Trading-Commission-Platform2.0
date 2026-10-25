@@ -6,12 +6,7 @@
 (function () {
     "use strict";
 
-    // 兼容 CTCP 尚未就绪（sidebar 在 api.js 之前被 include）的情况：轮询等待。
     function boot() {
-        if (!window.CTCP) {
-            setTimeout(boot, 50);
-            return;
-        }
         window.CTCPNotifications.init();
     }
 
@@ -23,10 +18,12 @@
         _timer: null,
         _listeners: [],
         _stopped: false,
+        _pending: null,
+        _revision: 0,
 
-        init() {
+        async init() {
             this._badge = document.getElementById("nav-unread-badge");
-            this.refresh();
+            await this.refresh();
             this._start();
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === "visible") {
@@ -43,25 +40,46 @@
             if (typeof cb === "function") this._listeners.push(cb);
         },
 
+        setCounts(counts) {
+            this._revision++;
+            const previousLatest = this.state.latestId;
+            this.state = {unreadCount: counts.unreadCount, latestId: counts.latestId};
+            this._renderBadge();
+            this._listeners.forEach((cb) => cb(this.state, previousLatest));
+        },
+
         async refresh() {
-            if (this._stopped) return;
-            try {
-                const res = await api().request("/me/notifications/unread-count");
-                const prevLatest = this.state.latestId;
-                this.state.unreadCount = (res && typeof res.unreadCount === "number") ? res.unreadCount : 0;
-                this.state.latestId = (res && typeof res.latestId === "number") ? res.latestId : 0;
-                this._renderBadge();
-                this._listeners.forEach((cb) => {
-                    try { cb(this.state, prevLatest); } catch (e) { /* 忽略单个监听异常 */ }
-                });
-            } catch (e) {
-                if (e && e.status === 401) this._stopped = true; // 未登录则停止轮询
-            }
+            if (this._stopped || document.visibilityState === "hidden") return;
+            if (this._pending) return this._pending;
+            const revision = this._revision;
+            this._pending = (async () => {
+                try {
+                    if (!await api().currentUser()) {
+                        this._stop();
+                        return;
+                    }
+                    const counts = await api().request("/me/notifications/unread-count");
+                    // 列表已同步数量时，丢弃更早发出的计数请求。
+                    if (revision === this._revision) this.setCounts(counts);
+                } catch (e) {
+                    if (e.status === 401) this._stop();
+                    // 网络错误保留上次数字，下一次可见轮询重试。
+                }
+            })();
+            try { await this._pending; }
+            finally { this._pending = null; }
+        },
+
+        _stop() {
+            this._stopped = true;
+            this._stopTimer();
+            this.setCounts({unreadCount: 0, latestId: 0});
         },
 
         _renderBadge() {
             if (!this._badge) return;
             const n = this.state.unreadCount;
+            this._badge.setAttribute("aria-label", "您有 " + n + " 条未读消息");
             if (!n) {
                 this._badge.hidden = true;
                 this._badge.textContent = "";
@@ -74,6 +92,7 @@
 
         _start() {
             this._stopTimer();
+            if (this._stopped || document.visibilityState === "hidden") return;
             this._timer = setInterval(() => {
                 if (document.visibilityState !== "visible") return;
                 this.refresh();

@@ -26,6 +26,9 @@ import java.util.Set;
 public class ProductService {
 
     @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
     private RatingService ratingService;
 
     /** 排序白名单（设计说明书 §3.7）。 */
@@ -212,7 +215,9 @@ public class ProductService {
         if (rows == 0) {
             throw new BizException(409, "商品已售出");
         }
-        return productOrderDAO.insert(productId, product.getSellerId(), currentUserId, product.getPrice());
+        int orderId = productOrderDAO.insert(productId, product.getSellerId(), currentUserId, product.getPrice());
+        notifyOrder(orderId, product.getSellerId(), product.getTitle(), "order_created", "商品被购买", "商品已被购买，请与买家约定交付。");
+        return orderId;
     }
 
     /**
@@ -255,6 +260,8 @@ public class ProductService {
         if (rows == 0) {
             throw new BizException(409, "当前状态不允许该操作");
         }
+        notifyOrder(orderId, order.getBuyerId(), productDAO.findById(order.getProductId()).getTitle(),
+                "order_delivered", "商品已交付", "卖家已确认交付，请核对后确认收货。");
     }
 
     /**
@@ -277,13 +284,19 @@ public class ProductService {
         if (rows == 0) {
             throw new BizException(409, "当前状态不允许该操作");
         }
-        productDAO.markCompleted(order.getProductId());
+        if (productDAO.markCompleted(order.getProductId()) == 0) {
+            throw new BizException(409, "商品状态已变化，请刷新后重试");
+        }
+        String title = productDAO.findById(order.getProductId()).getTitle();
+        notifyOrder(orderId, order.getBuyerId(), title, "order_completed", "交易已完成", "交易已完成，你可以为对方评价。");
+        notifyOrder(orderId, order.getSellerId(), title, "order_completed", "交易已完成", "交易已完成，你可以为对方评价。");
     }
 
     /**
      * 发起终止申请（增量契约：二手商品软删除确认与订单双向终止 §6.1）。
      * 仅 created/delivered 可发起，同一订单最多一条 pending 申请。
      */
+    @Transactional
     public int createTerminationRequest(int orderId, int currentUserId, String reason) {
         String trimmed = reason == null ? "" : reason.trim();
         if (trimmed.length() < 2 || trimmed.length() > 200) {
@@ -297,12 +310,16 @@ public class ProductService {
         if (terminationRequestDAO.hasPending(orderId)) {
             throw new BizException(409, "已有待处理的终止申请");
         }
-        return terminationRequestDAO.insert(orderId, currentUserId, trimmed);
+        int requestId = terminationRequestDAO.insert(orderId, currentUserId, trimmed);
+        notifyTermination(order, otherParty(order, currentUserId), "termination_requested", "对方申请终止交易",
+                "对方申请终止，请进入订单处理。原因：" + trimmed);
+        return requestId;
     }
 
     /**
      * 发起方撤回终止申请（§6.2）：仅发起方可操作，pending -> withdrawn。
      */
+    @Transactional
     public void withdrawTerminationRequest(int orderId, int currentUserId) {
         ProductOrder order = requireOrder(orderId);
         requireParticipant(order, currentUserId);
@@ -313,11 +330,13 @@ public class ProductService {
         if (terminationRequestDAO.markWithdrawn(request.getId(), currentUserId) == 0) {
             throw new BizException(409, "订单状态已变化，请刷新后重试");
         }
+        notifyTermination(order, otherParty(order, currentUserId), "termination_withdrawn", "对方已撤回终止申请", "对方已撤回申请，请查看订单当前进度。");
     }
 
     /**
      * 另一方拒绝终止申请（§6.3）：仅非发起方可操作，pending -> rejected。
      */
+    @Transactional
     public void rejectTerminationRequest(int orderId, int currentUserId) {
         ProductOrder order = requireOrder(orderId);
         requireParticipant(order, currentUserId);
@@ -328,6 +347,7 @@ public class ProductService {
         if (terminationRequestDAO.markResolved(request.getId(), currentUserId, "rejected") == 0) {
             throw new BizException(409, "订单状态已变化，请刷新后重试");
         }
+        notifyTermination(order, requesterIdOf(order, request), "termination_rejected", "对方拒绝终止交易", "对方拒绝终止，请查看订单当前进度。");
     }
 
     /**
@@ -353,11 +373,25 @@ public class ProductService {
             throw new BizException(409, "订单状态已变化，请刷新后重试");
         }
 
+        notifyTermination(order, requesterIdOf(order, request), "termination_approved", "对方同意终止交易", "对方同意终止，本次订单已终止。");
+
         return Map.of(
                 "orderId", orderId,
                 "orderStatus", "cancelled",
                 "productId", order.getProductId(),
                 "productStatus", "on_sale");
+    }
+
+    private int otherParty(ProductOrder order, int userId) {
+        return order.getBuyerId() == userId ? order.getSellerId() : order.getBuyerId();
+    }
+
+    private void notifyTermination(ProductOrder order, int recipientId, String type, String title, String action) {
+        notifyOrder(order.getId(), recipientId, productDAO.findById(order.getProductId()).getTitle(), type, title, action);
+    }
+
+    private void notifyOrder(int orderId, int recipientId, String resourceTitle, String type, String title, String action) {
+        notificationService.order(recipientId, true, orderId, resourceTitle, type, title, action);
     }
 
     /** 按 id 查订单，不存在返回 404。 */
