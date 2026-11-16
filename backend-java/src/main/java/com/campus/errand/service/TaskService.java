@@ -136,7 +136,7 @@ public class TaskService {
 
         Task task = new Task();
         task.setPublisherId(publisherId);
-        task.setTitle(dto.getTitle());
+        task.setTitle(dto.getTitle().trim());
         task.setDescription(dto.getDescription() == null ? "" : dto.getDescription());
         task.setPickup(dto.getPickup());
         task.setDelivery(dto.getDelivery());
@@ -282,10 +282,6 @@ public class TaskService {
     public Map<String, Object> updateTask(int taskId, TaskCreateDTO dto, int currentUserId) {
         validateTaskDto(dto);
         String title = dto.getTitle().trim();
-        if (title.isEmpty() || title.length() > 80) {
-            throw new BizException(400, "标题需为 1～80 字");
-        }
-
         Task task = requireEditableTask(taskId, currentUserId);
         task.setTitle(title);
         task.setDescription(dto.getDescription() == null ? "" : dto.getDescription());
@@ -485,6 +481,9 @@ public class TaskService {
     private void validateTaskDto(TaskCreateDTO dto) {
         if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
             throw new BizException(400, "标题不能为空");
+        }
+        if (dto.getTitle().trim().length() > 80) {
+            throw new BizException(400, "标题需为 1～80 字");
         }
         if (dto.getPickup() == null || dto.getPickup().trim().isEmpty()) {
             throw new BizException(400, "取件地点不能为空");
