@@ -24,7 +24,10 @@
         const config = Object.assign({method: "GET", cache: "no-store"}, options || {});
         config.credentials = "include";
         config.headers = Object.assign({Accept: "application/json"}, config.headers || {});
-        if (config.body && typeof config.body !== "string") {
+        // FormData 直接透传，由浏览器自动设置 multipart/form-data 边界，不要 JSON 化。
+        // 用 typeof 判空避免测试环境（Node vm 无 FormData 全局）引用未定义变量而抛错。
+        const isFormData = typeof FormData !== "undefined" && config.body instanceof FormData;
+        if (config.body && typeof config.body !== "string" && !isFormData) {
             config.headers["Content-Type"] = "application/json; charset=UTF-8";
             config.body = JSON.stringify(config.body);
         }

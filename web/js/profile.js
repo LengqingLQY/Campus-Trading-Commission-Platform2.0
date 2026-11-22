@@ -226,23 +226,17 @@
 
                 var fd = new FormData();
                 fd.append("avatar", file);
-                fetch("http://localhost:8081/api/users/me/avatar", {
+                api.request("/users/me/avatar", {
                     method: "POST",
-                    body: fd,
-                    credentials: "include"
+                    body: fd
                 })
-                    .then(function(response) { return response.json(); })
-                    .then(function(result) {
-                        if (result.code === 0) {
-                            api.toast("头像已更新", "success");
-                            api.resetCurrentUser();
-                            loadProfile();
-                        } else {
-                            throw new Error(result.msg || "上传失败");
-                        }
+                    .then(function() {
+                        api.toast("头像已更新", "success");
+                        api.resetCurrentUser();
+                        loadProfile();
                     })
                     .catch(function(error) {
-                        alert("头像上传失败：" + error.message);
+                        alert("头像上传失败：" + (error && error.message ? error.message : "未知错误"));
                         loadProfile();
                     });
             };
